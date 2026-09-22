@@ -464,7 +464,7 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
 <script type="text/x-dc" data-dc-script>
 const STORE_KEY = 'lectureTranslatorSessions_v1';
 const PREFS_KEY = 'lectureTranslatorPrefs_v1';
-const APP_VERSION = 'v21';
+const APP_VERSION = 'v23';
 const PREF_KEYS = ['fontScale', 'micDevice', 'srcLang', 'dstLang', 'tone', 'engine', 'apiKey', 'gptModel', 'stt', 'sttKey', 'sttModel', 'liveCourse', 'hiddenIds'];
 
 class Component extends DCLogic {
@@ -769,6 +769,10 @@ class Component extends DCLogic {
       audioClockNow: this.audioNow(),
       sliceMode: 'gapless-shared-recorder',
       headerAudioMs: this._headerAudioMs,
+      pendingRequests: this._sttPending || 0,
+      failStreak: this._sttFailStreak || 0,
+      secondsSinceLastSentence: this._lastSentenceAt ? Math.round((Date.now() - this._lastSentenceAt) / 1000) : null,
+      sliceWatermark: this._sttSentIndex,
       chunkCount: (this._chunks || []).length,
       sentences: (this._diag || []).slice(-40),
     };
@@ -1010,6 +1014,8 @@ class Component extends DCLogic {
   }
 
   async transcribeBlob(blob, chunkStart, chunkEnd, headerMs) {
+    const cs = chunkStart != null ? chunkStart : 0;
+    const ce = chunkEnd != null ? chunkEnd : cs + 6000;
     const key = this.sttKey();
     if (!key) return;
     const type = blob.type || '';
@@ -1023,23 +1029,43 @@ class Component extends DCLogic {
     if (verbose) fd.append('timestamp_granularities[]', 'segment');
     if (this.state.srcLang) fd.append('language', this.state.srcLang);
     if (this._sttPrompt) fd.append('prompt', this._sttPrompt);
-    let res;
-    try {
-      res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
-        method: 'POST', headers: { authorization: 'Bearer ' + key }, body: fd,
-      });
-    } catch (e) {
-      this.setState({ notice: '음성 인식 서버에 연결할 수 없습니다. 인터넷 연결을 확인해 주세요.' });
+    const attempt = async () => {
+      const ac = new AbortController();
+      const to = setTimeout(() => ac.abort(), this._sttTimeoutMs || 12000);
+      try {
+        return await fetch('https://api.openai.com/v1/audio/transcriptions', {
+          method: 'POST', headers: { authorization: 'Bearer ' + key }, body: fd, signal: ac.signal,
+        });
+      } finally { clearTimeout(to); }
+    };
+    let res = null, lastErr = null;
+    for (let tries = 0; tries < 2; tries++) {
+      try { res = await attempt(); } catch (e) { lastErr = e; res = null; }
+      if (res && res.ok) break;
+      if (res && (res.status === 401 || res.status === 400)) break;
+      if (lastErr && lastErr.name === 'AbortError') break;
+      if (tries === 0) await new Promise(r => setTimeout(r, 1200));
+    }
+    if (!res) {
+      const aborted = lastErr && lastErr.name === 'AbortError';
+      this._sttFailStreak = (this._sttFailStreak || 0) + 1;
+      this.setState({ notice: aborted
+        ? '음성 인식 응답이 지연되어 이 구간을 건너뜁니다. 인식은 계속됩니다.'
+        : '음성 인식 서버에 연결할 수 없습니다. 인터넷 연결을 확인해 주세요.' });
+      this.ageSttTail(ce);
       return;
     }
     if (!res.ok) {
-      this.setState({ notice: res.status === 401 ? 'OpenAI API 키가 올바르지 않습니다. 설정에서 확인해 주세요.' : 'OpenAI 음성 인식 오류(' + res.status + ')' });
+      this._sttFailStreak = (this._sttFailStreak || 0) + 1;
+      this.setState({ notice: res.status === 401 ? 'OpenAI API 키가 올바르지 않습니다. 설정에서 확인해 주세요.'
+        : res.status === 429 ? 'OpenAI 사용량 한도에 걸렸습니다. 잠시 후 자동으로 다시 시도합니다.'
+        : 'OpenAI 음성 인식 오류(' + res.status + ')' });
+      this.ageSttTail(ce);
       return;
     }
+    this._sttFailStreak = 0;
     const data = await res.json();
     const text = (data.text || '').trim();
-    const cs = chunkStart != null ? chunkStart : 0;
-    const ce = chunkEnd != null ? chunkEnd : cs + 6000;
     if (!text) { this.ageSttTail(ce); return; }
     let clean = text.replace(/\[[^\]]*\]/g, ' ').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
     let segs = Array.isArray(data.segments) ? data.segments : null;
@@ -1284,7 +1310,16 @@ class Component extends DCLogic {
       if (!this.sttKey()) { this.setState({ notice: this.STT_KEY_NOTICE }); return; }
       if (!window.MediaRecorder || !navigator.mediaDevices) { this.setState({ notice: this.STT_UNSUPPORTED_NOTICE }); return; }
       clearInterval(this._timer);
-      this._timer = setInterval(() => this.setState(s => ({ elapsed: s.elapsed + 1 })), 1000);
+      this._lastSentenceAt = Date.now();
+      this._idleWarned = false;
+      this._timer = setInterval(() => {
+        this.setState(s => ({ elapsed: s.elapsed + 1 }));
+        const idle = Date.now() - (this._lastSentenceAt || Date.now());
+        if (idle > 40000 && !this._idleWarned) {
+          this._idleWarned = true;
+          this.setState({ notice: '40초 이상 인식된 문장이 없습니다. 마이크 입력과 인터넷 상태를 확인해 주세요.' });
+        } else if (idle < 20000) this._idleWarned = false;
+      }, 1000);
       this._stickBottom = true;
       this.setState({ listening: true, notice: '' });
       this.startRecorder().then(() => this.startSttChunkLoop());
@@ -1326,6 +1361,7 @@ class Component extends DCLogic {
     const startMs = hasSpan ? startMsIn : (this._lastSentenceEndMs != null ? this._lastSentenceEndMs : 0);
     const endMs = hasSpan ? endMsIn : (this._recordingStartMs ? this.audioNow() : null);
     if (endMs != null) this._lastSentenceEndMs = endMs;
+    this._lastSentenceAt = Date.now();
     if (!this._diag) this._diag = [];
     this._diag.push({ en: en.slice(0, 90), startMs, endMs, src: hasSpan ? 'segment' : 'fallback' });
     if (this._diag.length > 400) this._diag.shift();
