@@ -1,4 +1,4 @@
-const CACHE = 'lecture-translate-v4';
+const CACHE = 'lecture-translate-v8';
 const ASSETS = [
   './',
   './index.html',

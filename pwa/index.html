@@ -64,6 +64,15 @@ body { margin: 0; background: #e6e4e1; padding: env(safe-area-inset-top) env(saf
 
   <div style="flex:1;min-width:0;background:#f5f4f2;border-radius:26px;box-shadow:0 14px 44px rgba(28,27,26,0.10);display:flex;flex-direction:column;overflow:hidden">
 
+    <sc-if value="{{ notice }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:14px 18px 0;padding:12px 18px;border-radius:14px;background:#fdece8;color:#9e2614;font-size:13px;line-height:1.55;flex:none">
+        <span style="min-width:0">{{ notice }}</span>
+        <button style="border:none;background:none;cursor:pointer;color:#9e2614;display:flex;padding:0;flex:none" onClick="{{ dismissNotice }}" title="닫기">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"></path></svg>
+        </button>
+      </div>
+    </sc-if>
+
     <sc-if value="{{ isLive }}" hint-placeholder-val="{{ true }}">
     <div style="display:flex;flex-direction:column;min-height:0;flex:1">
       
@@ -103,9 +112,6 @@ body { margin: 0; background: #e6e4e1; padding: env(safe-area-inset-top) env(saf
         </sc-if>
       </div>
 
-      <sc-if value="{{ notice }}" hint-placeholder-val="{{ false }}">
-        <div style="margin:14px 26px 0;padding:12px 18px;border-radius:14px;background:#fdece8;color:#9e2614;font-size:13px;line-height:1.55">{{ notice }}</div>
-      </sc-if>
 
       <div style="display:grid;grid-template-columns:{{ twoColCols }};grid-template-rows:{{ twoColRows }};gap:{{ twoColGap }};padding:{{ twoColPad }};flex:1;min-height:0">
         <div style="background:#ffffff;border-radius:20px;display:flex;flex-direction:column;min-height:0;overflow:hidden;box-shadow:0 2px 10px rgba(28,27,26,0.05)">
@@ -187,6 +193,9 @@ body { margin: 0; background: #e6e4e1; padding: env(safe-area-inset-top) env(saf
           </div>
         </sc-for>
       </div>
+      <sc-if value="{{ noSessions }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:44px 26px;text-align:center;font-size:14px;color:#a8a5a2;line-height:1.7;background:#ffffff;border-radius:20px;box-shadow:0 2px 10px rgba(28,27,26,0.05)">{{ emptyListText }}</div>
+      </sc-if>
     </div>
     </sc-if>
 
@@ -210,6 +219,10 @@ body { margin: 0; background: #e6e4e1; padding: env(safe-area-inset-top) env(saf
               <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.8a1 1 0 0 1 1.5-.86l11 7.2a1 1 0 0 1 0 1.72l-11 7.2a1 1 0 0 1-1.5-.86z"></path></svg>
             </sc-if>
             전체 다시듣기
+          </button>
+          <button style="display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;border:none;background:#eceae8;color:#1c1b1a;font-family:Archivo;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;flex:none" style-hover="background:#e3e1de" onClick="{{ exportSelected }}" title="녹음 파일 저장">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M8 11l4 4 4-4M5 19h14"></path></svg>
+            녹음 내보내기
           </button>
         </div>
       </div>
@@ -384,6 +397,17 @@ body { margin: 0; background: #e6e4e1; padding: env(safe-area-inset-top) env(saf
           </sc-if>
         </div>
 
+        <div style="background:#fff;border-radius:20px;padding:20px 22px;box-shadow:0 2px 10px rgba(28,27,26,0.05)">
+          <div style="font-size:15px;font-weight:700;margin-bottom:4px">녹음 저장</div>
+          <div style="font-size:12px;color:#a8a5a2;margin-bottom:14px">녹음은 기기 안에 자동 저장되어 앱을 다시 열어도 다시듣기가 됩니다.</div>
+          <div style="font-size:13px;color:#6f6c6a;margin-bottom:14px">{{ storageLine }}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+            <button style="padding:10px 18px;border-radius:14px;border:none;background:#1c1b1a;color:#f7f6f5;font-family:Archivo;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;flex:none" style-hover="background:#333130" onClick="{{ chooseFolder }}">저장 폴더 지정</button>
+            <div style="font-size:12px;color:#a8a5a2">{{ folderLine }}</div>
+          </div>
+          <div style="margin-top:14px;padding:12px 16px;border-radius:14px;background:#f7f6f5;font-size:12px;color:#6f6c6a;line-height:1.7">아이패드는 폴더 지정을 지원하지 않습니다. 강의 상세 화면의 “녹음 내보내기”를 누르면 “파일” 앱에서 저장 위치를 고를 수 있습니다.</div>
+        </div>
+
         <div style="background:#fff;border-radius:20px;padding:20px 22px;box-shadow:0 2px 10px rgba(28,27,26,0.05);margin-bottom:10px">
           <div style="font-size:15px;font-weight:700;margin-bottom:14px">번역 톤</div>
           <div style="display:flex;flex-direction:column;gap:8px">
@@ -442,6 +466,7 @@ class Component extends DCLogic {
     savedSessions: [], liveCourse: '', liveTitle: '', titleOverrides: {}, courseFilter: '전체', hiddenIds: [],
     fontScale: 1, micDevice: 'built-in', srcLang: 'en', dstLang: 'ko', tone: 'natural',
     engine: 'built-in', apiKey: '', keySaved: false, gptModel: 'gpt-4o-mini', stt: 'whisper', sttKey: '', sttModel: 'whisper-1',
+    storageInfo: '', folderName: '',
   };
   rootRef = React.createRef();
   enRef = React.createRef();
@@ -479,6 +504,9 @@ class Component extends DCLogic {
     this.setState({ windowWidth: window.innerWidth });
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     this.micSupported = !!SR;
+    this.refreshStorageInfo();
+    if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
+    this.idbGet('__dirHandle').then(h => { if (h) { this._dirHandle = h; this.setState({ folderName: h.name || '' }); } }).catch(() => {});
     try {
       const raw = window.localStorage.getItem(STORE_KEY);
       if (raw) this.setState({ savedSessions: JSON.parse(raw) });
@@ -547,12 +575,169 @@ class Component extends DCLogic {
   }
   pauseRecorder() { if (this._recorder && this._recorder.state === 'recording') this._recorder.pause(); }
   finishRecorder(sessionId) {
-    if (this._recorder && this._recorder.state !== 'inactive') { try { this._recorder.stop(); } catch (e) {} }
+    const rec = this._recorder;
+    const chunks = this._chunks;
+    const startMs = this._recordingStartMs;
+    const persist = () => {
+      if (!chunks || !chunks.length) return;
+      this._recordingsBySession[sessionId] = { chunks, startMs };
+      const blob = new Blob(chunks, { type: (chunks[0] && chunks[0].type) || 'audio/webm' });
+      this.idbPut(sessionId, { blob, startMs: startMs || 0, savedAt: Date.now() })
+        .then(() => this.refreshStorageInfo())
+        .catch(() => this.setState({ notice: '녹음 파일을 기기에 저장하지 못했습니다. 저장 공간을 확인해 주세요.' }));
+    };
+    if (rec && rec.state !== 'inactive') {
+      rec.addEventListener('stop', persist, { once: true });
+      try { rec.stop(); } catch (e) { persist(); }
+    } else persist();
     if (this._micStream) this._micStream.getTracks().forEach(t => t.stop());
-    if (this._chunks && this._chunks.length) this._recordingsBySession[sessionId] = { chunks: this._chunks, startMs: this._recordingStartMs };
     delete this._recordingsBySession.live;
     this._recorder = null; this._micStream = null; this._chunks = null; this._recordingStartMs = null;
   }
+
+  idb() {
+    if (!this._idbPromise) {
+      this._idbPromise = new Promise((res, rej) => {
+        const r = indexedDB.open('lectureTranslatorAudio', 1);
+        r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains('rec')) r.result.createObjectStore('rec'); };
+        r.onsuccess = () => res(r.result);
+        r.onerror = () => rej(r.error);
+      });
+    }
+    return this._idbPromise;
+  }
+  async idbPut(id, value) {
+    const db = await this.idb();
+    return new Promise((res, rej) => {
+      const tx = db.transaction('rec', 'readwrite');
+      tx.objectStore('rec').put(value, String(id));
+      tx.oncomplete = () => res(true);
+      tx.onerror = () => rej(tx.error);
+    });
+  }
+  async idbGet(id) {
+    const db = await this.idb();
+    return new Promise((res, rej) => {
+      const tx = db.transaction('rec', 'readonly');
+      const q = tx.objectStore('rec').get(String(id));
+      q.onsuccess = () => res(q.result || null);
+      q.onerror = () => rej(q.error);
+    });
+  }
+  async idbDelete(id) {
+    try {
+      const db = await this.idb();
+      await new Promise((res) => {
+        const tx = db.transaction('rec', 'readwrite');
+        tx.objectStore('rec').delete(String(id));
+        tx.oncomplete = res; tx.onerror = res;
+      });
+    } catch (e) {}
+  }
+
+  recBlob(rec) {
+    if (!rec) return null;
+    if (rec.blob) return rec.blob;
+    if (rec.chunks && rec.chunks.length) return new Blob(rec.chunks, { type: (rec.chunks[0] && rec.chunks[0].type) || 'audio/webm' });
+    return null;
+  }
+
+  async resolveRecording(scopeId) {
+    const mem = this.findRecording(scopeId);
+    if (mem && ((mem.chunks && mem.chunks.length) || mem.blob)) return mem;
+    try {
+      const saved = await this.idbGet(scopeId);
+      if (saved && saved.blob) return { blob: saved.blob, startMs: saved.startMs || 0 };
+    } catch (e) {}
+    return null;
+  }
+
+  async refreshStorageInfo() {
+    const mb = (n) => (n / (1024 * 1024)).toFixed(n >= 1024 * 1024 * 100 ? 0 : 1) + 'MB';
+    let recBytes = 0, count = 0;
+    try {
+      const db = await this.idb();
+      await new Promise((res) => {
+        const tx = db.transaction('rec', 'readonly');
+        const cur = tx.objectStore('rec').openCursor();
+        cur.onsuccess = (ev) => {
+          const c = ev.target.result;
+          if (!c) { res(); return; }
+          const v = c.value;
+          if (v && v.blob && v.blob.size) { recBytes += v.blob.size; count += 1; }
+          c.continue();
+        };
+        cur.onerror = () => res();
+        tx.onerror = () => res();
+      });
+    } catch (e) {}
+    let quotaLine = '';
+    try {
+      if (navigator.storage && navigator.storage.estimate) {
+        const est = await navigator.storage.estimate();
+        if (est && est.quota) quotaLine = ' · 사용 가능 ' + mb(Math.max(0, (est.quota || 0) - (est.usage || 0)));
+      }
+    } catch (e) {}
+    this.setState({ storageInfo: '녹음 ' + count + '개 · ' + mb(recBytes) + quotaLine });
+  }
+
+  chooseFolder = async () => {
+    if (!window.showDirectoryPicker) {
+      this.setState({ notice: '이 브라우저는 폴더 지정을 지원하지 않습니다. “녹음 내보내기”를 누르면 저장 위치를 고를 수 있습니다.' });
+      return;
+    }
+    try {
+      const handle = await window.showDirectoryPicker({ mode: 'readwrite', id: 'lectureRecordings' });
+      this._dirHandle = handle;
+      await this.idbPut('__dirHandle', handle);
+      this.setState({ folderName: handle.name, notice: '' });
+    } catch (e) {}
+  };
+
+  async ensureFolderPermission() {
+    const h = this._dirHandle;
+    if (!h || !h.queryPermission) return null;
+    let p = await h.queryPermission({ mode: 'readwrite' });
+    if (p !== 'granted' && h.requestPermission) p = await h.requestPermission({ mode: 'readwrite' });
+    return p === 'granted' ? h : null;
+  }
+
+  exportRecording = async (id, title) => {
+    const rec = await this.resolveRecording(id);
+    const blob = this.recBlob(rec);
+    if (!blob) { this.setState({ notice: '이 강의의 녹음 파일이 없습니다.' }); return; }
+    const type = blob.type || '';
+    const ext = type.includes('mp4') || type.includes('m4a') ? 'm4a' : type.includes('ogg') ? 'ogg' : 'webm';
+    const safe = (title || '강연 녹음').replace(/[\\/:*?"<>|]/g, ' ').trim().slice(0, 60);
+    const name = safe + '.' + ext;
+    const folder = await this.ensureFolderPermission();
+    if (folder) {
+      try {
+        const fh = await folder.getFileHandle(name, { create: true });
+        const w = await fh.createWritable();
+        await w.write(blob);
+        await w.close();
+        this.setState({ notice: '“' + folder.name + '” 폴더에 ' + name + ' 으로 저장했습니다.' });
+        return;
+      } catch (e) {}
+    }
+    if (window.showSaveFilePicker) {
+      try {
+        const fh = await window.showSaveFilePicker({ suggestedName: name });
+        const w = await fh.createWritable();
+        await w.write(blob);
+        await w.close();
+        this.setState({ notice: name + ' 으로 저장했습니다.' });
+        return;
+      } catch (e) { if (e && e.name === 'AbortError') return; }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    this.setState({ notice: '다운로드 폴더에 ' + name + ' 으로 저장했습니다. (아이패드는 “파일” 앱 → 다운로드)' });
+  };
 
   bindAudioEl = (el) => {
     this.audioEl = el;
@@ -564,15 +749,14 @@ class Component extends DCLogic {
 
   playRange(key, scopeId, fallbackText, startMs, endMs, onToggleOff) {
     if (this._activeKey === key) { this.stopPlayback(); this._activeKey = null; onToggleOff(); return true; }
-    const rec = this.findRecording(scopeId);
     this.stopPlayback();
-    if (rec && rec.chunks && rec.chunks.length) {
-      this._activeKey = key; this._activeOnToggleOff = onToggleOff;
-      this.playDecodedRange(key, scopeId, rec, startMs || 0, endMs, fallbackText, onToggleOff);
-      return true;
-    }
-    this.speak(fallbackText, key, onToggleOff);
-    return false;
+    this._activeKey = key; this._activeOnToggleOff = onToggleOff;
+    this.resolveRecording(scopeId).then(rec => {
+      if (this._activeKey !== key) return;
+      if (this.recBlob(rec)) this.playDecodedRange(key, scopeId, rec, startMs || 0, endMs, fallbackText, onToggleOff);
+      else this.speak(fallbackText, key, onToggleOff);
+    }).catch(() => { if (this._activeKey === key) this.speak(fallbackText, key, onToggleOff); });
+    return true;
   }
 
   stopPlayback() {
@@ -612,24 +796,26 @@ class Component extends DCLogic {
   }
 
   async getDecoded(scopeId, rec) {
-    if (this._decoded && this._decoded.id === scopeId && this._decoded.count === rec.chunks.length) return this._decoded.buffer;
+    const blob = this.recBlob(rec);
+    if (!blob) return null;
+    if (this._decoded && this._decoded.id === scopeId && this._decoded.count === blob.size) return this._decoded.buffer;
     const Ctx = window.AudioContext || window.webkitAudioContext;
     if (!Ctx) return null;
     if (!this._audioCtx) this._audioCtx = new Ctx();
-    const blob = new Blob(rec.chunks, { type: (rec.chunks[0] && rec.chunks[0].type) || 'audio/webm' });
     const bytes = await blob.arrayBuffer();
     const buffer = await new Promise((resolve, reject) => {
       const p = this._audioCtx.decodeAudioData(bytes, resolve, reject);
       if (p && p.then) p.then(resolve, reject);
     });
-    this._decoded = { id: scopeId, count: rec.chunks.length, buffer };
+    this._decoded = { id: scopeId, count: blob.size, buffer };
     return buffer;
   }
 
   playViaElement(key, rec, startMs, endMs, fallbackText, onToggleOff) {
     const el = this.audioEl;
     if (!el) { this.speak(fallbackText, key, onToggleOff); return; }
-    const blob = new Blob(rec.chunks, { type: (rec.chunks[0] && rec.chunks[0].type) || 'audio/webm' });
+    const blob = this.recBlob(rec);
+    if (!blob) { this.speak(fallbackText, key, onToggleOff); return; }
     const url = URL.createObjectURL(blob);
     this._activeKey = key; this._activeEndMs = endMs != null ? endMs : null; this._activeOnToggleOff = onToggleOff;
     el.src = url;
@@ -720,7 +906,7 @@ class Component extends DCLogic {
     fd.append('model', this.state.sttModel || 'whisper-1');
     fd.append('response_format', 'json');
     if (this.state.srcLang) fd.append('language', this.state.srcLang);
-    fd.append('prompt', this._sttPrompt || 'University lecture in English. Transcribe accurately with punctuation.');
+    if (this._sttPrompt) fd.append('prompt', this._sttPrompt);
     let res;
     try {
       res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
@@ -830,6 +1016,9 @@ class Component extends DCLogic {
 
   addSentence = (en, startMsIn, endMsIn) => {
     if (!this.isMeaningful(en)) return;
+    const norm = en.trim().toLowerCase();
+    if (this._lastSentenceNorm === norm) return;
+    this._lastSentenceNorm = norm;
     const id = 's' + (++this._id);
     const hasSpan = startMsIn != null && endMsIn != null && endMsIn > startMsIn;
     const startMs = hasSpan ? startMsIn : (this._lastSentenceEndMs != null ? this._lastSentenceEndMs : 0);
@@ -948,6 +1137,7 @@ class Component extends DCLogic {
     if (e && e.stopPropagation) e.stopPropagation();
     const ok = window.confirm('“' + (title || '이 스효립트') + '”를 삭제합니까? 되돌릴 수 없습니다.');
     if (!ok) return;
+    this.idbDelete(id).then(() => this.refreshStorageInfo());
     this.setState(s => {
       const nextSaved = s.savedSessions.filter(x => x.id !== id);
       const nextHidden = nextSaved.length === s.savedSessions.length ? s.hiddenIds.concat([id]) : s.hiddenIds;
@@ -1110,14 +1300,45 @@ class Component extends DCLogic {
       this.updateSessionSummary(id, ['녹음된 내용이 없어 요약할 스크립트가 없습니다.']);
       return;
     }
+    const SYS = '다음은 대학 강의의 한국어 번역 스크립트다. 핵심 내용을 3~5개의 짧은 한국어 불릿으로 요약한다. 각 불릿은 한 줄, 번호나 대시 없이 줄바꿈으로만 구분해서 출력한다.';
     try {
-      const out = await window.claude.complete({
-        system: '다음은 대학 강의의 한국어 번역 스크립트다. 핵심 내용을 3~5개의 짧은 한국어 불릿으로 요약한다. 각 불릿은 한 줄, 번호나 대시 없이 줄바꿈으로만 구분해서 출력한다.',
-        messages: [{ role: 'user', content: transcript }], max_tokens: 500,
-      });
-      const points = (out || '').split('\n').map(x => x.trim()).filter(Boolean);
+      const out = await this.callSummaryEngine(SYS, transcript.slice(0, 12000));
+      const points = (out || '').split('\n').map(x => x.replace(/^[-•\d.\s]+/, '').trim()).filter(Boolean);
       this.updateSessionSummary(id, points.length ? points : ['요약을 생성하지 못했습니다.']);
-    } catch (e) { this.updateSessionSummary(id, ['요약을 생성하지 못했습니다.']); }
+    } catch (e) {
+      this.updateSessionSummary(id, ['요약 생성 실패 · ' + (e && e.message ? e.message : '알 수 없는 오류')]);
+    }
+  }
+
+  async callSummaryEngine(SYS, body) {
+    const engine = this.state.engine;
+    const key = (this.state.apiKey || '').trim();
+    const openaiKey = engine === 'gpt' ? key : this.sttKey();
+    if (engine === 'claude' && key) {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body: JSON.stringify({ model: 'claude-3-5-haiku-20241022', max_tokens: 600, system: SYS, messages: [{ role: 'user', content: body }] }),
+      });
+      if (!res.ok) throw new Error('Claude API 오류(' + res.status + ')');
+      const data = await res.json();
+      return ((data.content && data.content[0] && data.content[0].text) || '').trim();
+    }
+    if (openaiKey) {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + openaiKey },
+        body: JSON.stringify({ model: engine === 'gpt' ? (this.state.gptModel || 'gpt-4o-mini') : 'gpt-4o-mini', max_tokens: 600, messages: [{ role: 'system', content: SYS }, { role: 'user', content: body }] }),
+      });
+      if (!res.ok) throw new Error('GPT API 오류(' + res.status + ')');
+      const data = await res.json();
+      return ((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '').trim();
+    }
+    if (window.claude && window.claude.complete) {
+      const out = await window.claude.complete({ system: SYS, messages: [{ role: 'user', content: body }], max_tokens: 600 });
+      return (out || '').trim();
+    }
+    throw new Error('설정에서 번역 엔진이나 OpenAI API 키를 넣으면 요약이 생성됩니다.');
   }
   updateSessionSummary(id, summary) {
     this.setState(s => {
@@ -1127,6 +1348,7 @@ class Component extends DCLogic {
     });
   }
 
+  dismissNotice = () => this.setState({ notice: '' });
   dismissBanner = () => this.setState({ justEnded: false });
   openDetail = (id) => this.setState({ screen: 'detail', selectedSessionId: id, tooltip: null, selectedId: null, selectionPos: null, justEnded: false });
   backToList = () => this.setState({ screen: 'list', tooltip: null, selectedId: null, selectionPos: null });
@@ -1168,7 +1390,9 @@ class Component extends DCLogic {
     const isNarrow = (st.windowWidth || 1200) < 860;
     const live = st.screen === 'live', list = st.screen === 'list', detail = st.screen === 'detail', settings = st.screen === 'settings';
     const q = st.query.trim().toLowerCase();
-    const allSessions = st.savedSessions.concat(this.mockSessions).map(x => (st.titleOverrides[x.id] ? { ...x, ...st.titleOverrides[x.id] } : x));
+    const allSessions = st.savedSessions.concat(this.mockSessions)
+      .map(x => (st.titleOverrides[x.id] ? { ...x, ...st.titleOverrides[x.id] } : x))
+      .filter(x => st.hiddenIds.indexOf(x.id) === -1);
     const courseNames = ['전체'].concat(Array.from(new Set(allSessions.map(x => x.course).filter(Boolean))));
     const courseFilterOptions = courseNames.map(name => ({
       label: name,
@@ -1176,7 +1400,6 @@ class Component extends DCLogic {
       onPick: () => this.setState({ courseFilter: name }),
     }));
     const sessions = allSessions
-      .filter(x => st.hiddenIds.indexOf(x.id) === -1)
       .filter(x => !q || (x.title + x.course).toLowerCase().includes(q))
       .filter(x => st.courseFilter === '전체' || x.course === st.courseFilter)
       .map(x => ({ ...x, tagLabel: (x.summary && x.summary.length) ? '요약 완료' : (x.mock ? '요약 완료' : '요약 생성 중'), onOpen: () => this.openDetail(x.id), onDelete: (e) => this.deleteSession(x.id, x.title, e) }));
@@ -1216,7 +1439,13 @@ class Component extends DCLogic {
       tooltip: st.tooltip, closeTooltip: this.closeTooltip,
       goLive: this.goLive, backToList: this.backToList, goSettings: this.goSettings,
       justEnded: st.justEnded, dismissBanner: this.dismissBanner,
+      dismissNotice: this.dismissNotice,
+      storageLine: st.storageInfo || '기기 저장 공간을 확인하는 중…',
+      folderLine: st.folderName ? '현재 폴더: ' + st.folderName : '지정하지 않으면 저장할 때마다 위치를 묻습니다.',
+      chooseFolder: this.chooseFolder,
+      exportSelected: () => this.exportRecording(st.selectedSessionId, (selected.course ? selected.course + ' - ' : '') + selected.title),
       summaryPoints, noSummary: detail && summaryPoints.length === 0,
+      noSessions: sessions.length === 0, emptyListText: q || st.courseFilter !== '전체' ? '조건에 맞는 스효립트가 없습니다.' : '아직 생성된 스효립트가 없습니다. 강의를 녹원하고 “강의 종료”를 누르면 여기에 쌓입니다.',
       headerPlaying: st.headerPlaying, headerNotPlaying: !st.headerPlaying, toggleHeaderPlay: this.toggleHeaderPlay,
       rootRef: this.rootRef, enRef: this.enRef, koRef: this.koRef, onScrollEn: this.onScrollEn, onScrollKo: this.onScrollKo, bindAudioEl: this.bindAudioEl,
       enFont: Math.round(17 * st.fontScale) + 'px', koFont: Math.round(17 * st.fontScale) + 'px',
