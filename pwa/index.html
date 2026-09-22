@@ -30,10 +30,11 @@ if ('serviceWorker' in navigator) {
 <style id="__om-edit-overrides">
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap');
 * { box-sizing: border-box; }
-html { background: #e6e4e1; }
-body { margin: 0; background: #e6e4e1; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); -webkit-text-size-adjust: 100%; }
+html { background: #e6e4e1; height: 100%; }
+body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); -webkit-text-size-adjust: 100%; }
 @keyframes recPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.15; } }
 @keyframes shimmer { 0%,100% { opacity: 0.3; } 50% { opacity: 0.8; } }
+@keyframes caret { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
 </style>
 </helmet>
 <template id="__bundler_thumbnail" data-bg-color="#e6e4e1">
@@ -46,7 +47,7 @@ body { margin: 0; background: #e6e4e1; padding: env(safe-area-inset-top) env(saf
 <text x="700" y="150" font-family="Arial" font-size="26" fill="#1c1b1a">역</text>
 </svg>
 </template>
-<div ref="{{ rootRef }}" style="position:relative;min-height:100vh;background:#e6e4e1;color:#1c1b1a;font-family:Archivo, system-ui, sans-serif;font-size:15px;line-height:1.55;display:flex;flex-direction:row;gap:{{ rootGap }};padding:{{ rootPad }}">
+<div ref="{{ rootRef }}" style="position:relative;height:100dvh;min-height:540px;overflow:hidden;background:#e6e4e1;color:#1c1b1a;font-family:Archivo, system-ui, sans-serif;font-size:15px;line-height:1.55;display:flex;flex-direction:row;gap:{{ rootGap }};padding:{{ rootPad }}">
   <audio ref="{{ bindAudioEl }}" style="display:none"></audio>
 
   <div style="flex:none;width:{{ railWidth }};align-self:{{ railAlignSelf }};display:flex;flex-direction:{{ railDirection }};align-items:center;gap:10px;padding:{{ railPad }}">
@@ -62,7 +63,7 @@ body { margin: 0; background: #e6e4e1; padding: env(safe-area-inset-top) env(saf
     </button>
   </div>
 
-  <div style="flex:1;min-width:0;background:#f5f4f2;border-radius:26px;box-shadow:0 14px 44px rgba(28,27,26,0.10);display:flex;flex-direction:column;overflow:hidden">
+  <div style="flex:1;min-width:0;min-height:0;background:#f5f4f2;border-radius:26px;box-shadow:0 14px 44px rgba(28,27,26,0.10);display:flex;flex-direction:column;overflow:hidden">
 
     <sc-if value="{{ notice }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:14px 18px 0;padding:12px 18px;border-radius:14px;background:#fdece8;color:#9e2614;font-size:13px;line-height:1.55;flex:none">
@@ -136,7 +137,7 @@ body { margin: 0; background: #e6e4e1; padding: env(safe-area-inset-top) env(saf
               </div>
             </sc-for>
             <sc-if value="{{ interim }}" hint-placeholder-val="{{ false }}">
-              <div style="padding:0 6px;font-size:{{ enFont }};line-height:1.8;color:#b4b1ae;animation:shimmer 1.6s ease-in-out infinite">{{ interim }}</div>
+              <div style="padding:0 6px;font-size:{{ enFont }};line-height:1.8;color:#8d8a87">{{ interim }}<span style="display:inline-block;width:2px;height:1em;margin-left:3px;background:#ec3013;vertical-align:-0.12em;animation:caret 1s step-end infinite"></span></div>
             </sc-if>
             <sc-if value="{{ isEmptyLive }}" hint-placeholder-val="{{ true }}">
               <div style="padding:0 6px;font-size:15px;color:#c2bfbc;line-height:1.7">"듣기 시작"을 누르면 영어 원문이 여기 쌓입니다.</div>
@@ -162,7 +163,7 @@ body { margin: 0; background: #e6e4e1; padding: env(safe-area-inset-top) env(saf
     </sc-if>
 
     <sc-if value="{{ isList }}" hint-placeholder-val="{{ false }}">
-    <div style="padding:26px;overflow-y:auto">
+    <div style="padding:26px;overflow-y:auto;flex:1;min-height:0">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px">
         <div>
           <div style="font-size:19px;font-weight:700;letter-spacing:-0.01em">저장된 스크립트</div>
@@ -294,7 +295,7 @@ body { margin: 0; background: #e6e4e1; padding: env(safe-area-inset-top) env(saf
     </sc-if>
 
     <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
-    <div style="padding:26px;overflow-y:auto">
+    <div style="padding:26px;overflow-y:auto;flex:1;min-height:0">
       <div style="font-size:19px;font-weight:700;letter-spacing:-0.01em;margin-bottom:4px">설정</div>
       <div style="font-size:13px;color:#8a8785;margin-bottom:20px">수업 중에는 손대지 않아도 되도록 미리 맞춰두세요.</div>
 
@@ -672,7 +673,11 @@ class Component extends DCLogic {
   }
 
   async refreshStorageInfo() {
-    const mb = (n) => (n / (1024 * 1024)).toFixed(n >= 1024 * 1024 * 100 ? 0 : 1) + 'MB';
+    const mb = (n) => {
+      const m = n / (1024 * 1024);
+      if (m >= 1024) return (m / 1024).toFixed(m >= 10240 ? 0 : 1) + 'GB';
+      return m.toFixed(m >= 100 ? 0 : 1) + 'MB';
+    };
     let recBytes = 0, count = 0;
     try {
       const db = await this.idb();
@@ -886,18 +891,23 @@ class Component extends DCLogic {
       window.localStorage.setItem(PREFS_KEY, JSON.stringify(out));
     } catch (e) {}
   }
-  componentDidUpdate(prevProps, prevState) {
-    if (!prevState) return;
-    if (PREF_KEYS.some(k => prevState[k] !== this.state[k])) this.persistPrefs();
+  componentDidUpdate() {
     if (this.state.screen !== 'live') return;
-    const grew = this.state.liveBuffer.length !== prevState.liveBuffer.length
-      || this.state.liveParagraphs.length !== prevState.liveParagraphs.length
-      || this.state.interim !== prevState.interim;
-    if (grew && this._stickBottom !== false) {
-      this._syncing = true;
+    const st = this.state;
+    const sig = st.liveBuffer.length + ':' + st.liveParagraphs.length + ':' + (st.interim || '').length;
+    if (sig === this._contentSig) return;
+    this._contentSig = sig;
+    if (this._stickBottom !== false) this.pinToBottom();
+  }
+
+  pinToBottom() {
+    clearTimeout(this._pinTimer);
+    this._syncing = true;
+    this.scrollToBottom();
+    this._pinTimer = setTimeout(() => {
       this.scrollToBottom();
-      requestAnimationFrame(() => { this._syncing = false; });
-    }
+      this._syncing = false;
+    }, 120);
   }
 
   stampFromSec(sec) { return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); }
@@ -917,7 +927,7 @@ class Component extends DCLogic {
     const mime = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
       : MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
       : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
-    const CHUNK_MS = 6000;
+    const CHUNK_MS = 4000;
     const cycle = () => {
       if (!this.state.listening) return;
       let parts = [];
@@ -949,13 +959,15 @@ class Component extends DCLogic {
 
   enqueueTranscribe(blob, chunkStart, chunkEnd) {
     this._sttPending = (this._sttPending || 0) + 1;
-    this.setState({ interim: this._sttPending > 0 ? '인식 중…' : '' });
+    const held = this._sttTail && this._sttTail.text ? this._sttTail.text : '';
+    if (held) this.setInterim(held);
     this._sttQueue = (this._sttQueue || Promise.resolve())
       .then(() => this.transcribeBlob(blob, chunkStart, chunkEnd))
       .catch(() => {})
       .then(() => {
         this._sttPending = Math.max(0, (this._sttPending || 1) - 1);
-        if (this._sttPending === 0) this.setState({ interim: '' });
+        const pendingText = this._sttTail && this._sttTail.text ? this._sttTail.text : '';
+        this.setInterim(pendingText);
       });
   }
 
@@ -1006,7 +1018,8 @@ class Component extends DCLogic {
       const isLast = i === spans.length - 1;
       const startMs = sp.from < prefix.length ? tail.startMs : atMs(sp.from - prefix.length);
       if (isLast && !sp.complete) {
-        this._sttTail = { text: sp.text, startMs, age: 0, lastEnd: ce };
+        const bornAt = tail && tail.bornAt != null ? tail.bornAt : startMs;
+        this._sttTail = { text: sp.text, startMs, bornAt, age: tail ? (tail.age || 0) : 0, lastEnd: ce };
         return;
       }
       const endMs = Math.max(startMs + 200, atMs(Math.max(0, sp.to - prefix.length)));
@@ -1016,17 +1029,53 @@ class Component extends DCLogic {
     this.ageSttTail(ce);
   }
 
+  setInterim(text) {
+    const target = (text || '').trim();
+    this._revealTarget = target;
+    if (!target) {
+      clearInterval(this._revealTimer); this._revealTimer = null;
+      this._revealCount = 0;
+      this.setState({ interim: '' });
+      return;
+    }
+    const words = target.split(/\s+/);
+    if (this._revealCount == null) this._revealCount = 0;
+    if (this._revealCount > words.length) this._revealCount = 0;
+    const paint = () => {
+      const w = (this._revealTarget || '').split(/\s+/);
+      const n = Math.min(this._revealCount, w.length);
+      this.setState({ interim: w.slice(0, n).join(' ') });
+    };
+    paint();
+    if (this._revealTimer) return;
+    this._revealTimer = setInterval(() => {
+      const w = (this._revealTarget || '').split(/\s+/);
+      if (!this._revealTarget) { clearInterval(this._revealTimer); this._revealTimer = null; return; }
+      if (this._revealCount >= w.length) return;
+      this._revealCount += 1;
+      paint();
+    }, 70);
+  }
+
+  resetInterim() {
+    clearInterval(this._revealTimer); this._revealTimer = null;
+    this._revealTarget = ''; this._revealCount = 0;
+    this.setState({ interim: '' });
+  }
+
   ageSttTail(chunkEnd) {
     const t = this._sttTail;
     if (!t || !t.text) return;
     t.age = (t.age || 0) + 1;
     t.lastEnd = chunkEnd;
-    if (t.age >= 4 || t.text.length > 400) this.flushSttTail();
+    const heldMs = chunkEnd - (t.bornAt != null ? t.bornAt : chunkEnd);
+    if (heldMs >= 14000 || t.age >= 3 || t.text.length > 220) this.flushSttTail();
   }
 
   flushSttTail() {
     const t = this._sttTail;
     this._sttTail = null;
+    this.resetInterim();
     if (!t || !t.text) return;
     if (!this.isMeaningful(t.text) || this.isSilenceArtifact(t.text)) return;
     this.addSentence(t.text, t.startMs, Math.max(t.startMs + 300, t.lastEnd || t.startMs + 1000));
@@ -1142,6 +1191,7 @@ class Component extends DCLogic {
       this.stopSttChunkLoop();
       clearInterval(this._timer);
       this.pauseRecorder();
+      this.resetInterim();
       this.setState({ listening: false, interim: '' });
       return;
     }
@@ -1166,7 +1216,7 @@ class Component extends DCLogic {
         const r = ev.results[i]; const txt = r[0].transcript.trim();
         if (r.isFinal) { if (txt) this.addSentence(txt); } else { interim += txt + ' '; }
       }
-      this.setState({ interim: interim.trim() });
+      this.setInterim(interim.trim());
     };
     rec.onerror = (ev) => {
       const map = { 'not-allowed': '마이크 권한이 거부됐습니다. 주소창의 마이크 권한을 허용해 주세요.', 'audio-capture': '마이크를 찾을 수 없습니다. 입력 장치를 확인해 주세요.' };
@@ -1443,12 +1493,22 @@ class Component extends DCLogic {
     if (!el) return true;
     return el.scrollHeight - el.scrollTop - el.clientHeight < 120;
   }
-  onScrollEn = () => { if (!this._syncing) this._stickBottom = this.nearBottom(this.enRef); this.syncScroll(this.enRef, this.koRef); };
-  onScrollKo = () => { if (!this._syncing) this._stickBottom = this.nearBottom(this.koRef); this.syncScroll(this.koRef, this.enRef); };
+  onScrollEn = () => {
+    if (this._syncing) return;
+    this._stickBottom = this.nearBottom(this.enRef);
+    if (this._stickBottom) return;
+    this.syncScroll(this.enRef, this.koRef);
+  };
+  onScrollKo = () => {
+    if (this._syncing) return;
+    this._stickBottom = this.nearBottom(this.koRef);
+    if (this._stickBottom) return;
+    this.syncScroll(this.koRef, this.enRef);
+  };
   scrollToBottom() {
     [this.enRef, this.koRef].forEach(ref => {
       const el = ref && ref.current;
-      if (el) el.scrollTop = el.scrollHeight;
+      if (el) el.scrollTop = Math.max(0, el.scrollHeight - el.clientHeight);
     });
   }
 
