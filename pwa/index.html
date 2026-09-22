@@ -80,7 +80,7 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
 
       <div style="display:flex;align-items:center;gap:16px;padding:20px 26px;border-bottom:1px solid rgba(28,27,26,0.07);flex-wrap:wrap">
         <div style="min-width:0;flex:1">
-          <input value="{{ liveTitle }}" onChange="{{ setLiveTitle }}" placeholder="강의 제목을 입력하세요" style="border: none; background: none; padding: 0; font-family: Archivo; font-weight: 700; font-size: 25px; letter-spacing: -0.01em; color: #1c1b1a; width: 254px; max-width: 420px; height: 31px"><input value="{{ liveCourse }}" onChange="{{ setLiveCourse }}" placeholder="과목명 (예: 심리학개론)" style="border:none;background:none;padding:0;font-family:Archivo;font-weight:600;font-size:12px;letter-spacing:0.04em;color:#a8a5a2;width:100%;max-width:280px">
+          <input value="{{ liveTitle }}" onChange="{{ setLiveTitle }}" placeholder="강의 제목을 입력하세요" style="border: none; background: none; padding: 0; font-family: Archivo; font-weight: 700; font-size: 25px; letter-spacing: -0.01em; color: #1c1b1a; width: 254px; max-width: 420px; height: 31px"><input value="{{ liveCourse }}" onChange="{{ setLiveCourse }}" placeholder="과목명 (예: 심리학개론)" style="border:none;background:none;padding:0;font-family:Archivo;font-weight:600;font-size:12px;letter-spacing:0.04em;color:#5f5c5a;width:100%;max-width:280px">
           
         </div>
         <div style="display:flex;align-items:center;gap:8px;margin-left:auto">
@@ -116,12 +116,12 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
 
       <div style="display:grid;grid-template-columns:{{ twoColCols }};grid-template-rows:{{ twoColRows }};gap:{{ twoColGap }};padding:{{ twoColPad }};flex:1;min-height:0">
         <div style="background:#ffffff;border-radius:20px;display:flex;flex-direction:column;min-height:0;overflow:hidden;box-shadow:0 2px 10px rgba(28,27,26,0.05)">
-          <div style="padding:16px 22px 10px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#a8a5a2;font-weight:600">English</div>
+          <div style="padding:16px 22px 10px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6f6c6a;font-weight:600">English</div>
           <div ref="{{ enRef }}" onScroll="{{ onScrollEn }}" style="overflow-y:auto;padding:0 18px 22px;min-height:0;flex:1">
             <sc-for list="{{ paragraphs }}" as="para" hint-placeholder-count="4">
               <div style="margin-bottom:22px">
-                <div style="display:flex;align-items:center;gap:8px;padding:0 6px 6px;font-size:11px;color:#b4b1ae">
-                  <button style="border:none;background:none;padding:0;display:flex;cursor:pointer;color:#b4b1ae" style-hover="color:#ec3013" onClick="{{ para.onPlay }}" title="문단 다시듣기">
+                <div style="display:flex;align-items:center;gap:8px;padding:0 6px 6px;font-size:11px;color:#5f5c5a">
+                  <button style="border:none;background:none;padding:0;display:flex;cursor:pointer;color:#5f5c5a" style-hover="color:#ec3013" onClick="{{ para.onPlay }}" title="문단 다시듣기">
                     <sc-if value="{{ para.isPlaying }}" hint-placeholder-val="{{ false }}">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1.5"></rect><rect x="14" y="4" width="4" height="16" rx="1.5"></rect></svg>
                     </sc-if>
@@ -140,17 +140,17 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
               <div style="padding:0 6px;font-size:{{ enFont }};line-height:1.8;color:#6f6c6a">{{ interim }}<span style="display:inline-block;width:2px;height:1em;margin-left:3px;background:#ec3013;vertical-align:-0.12em;animation:caret 1s step-end infinite"></span></div>
             </sc-if>
             <sc-if value="{{ isEmptyLive }}" hint-placeholder-val="{{ true }}">
-              <div style="padding:0 6px;font-size:15px;color:#c2bfbc;line-height:1.7">"듣기 시작"을 누르면 영어 원문이 여기 쌓입니다.</div>
+              <div style="padding:0 6px;font-size:15px;color:#6f6c6a;line-height:1.7">"듣기 시작"을 누르면 영어 원문이 여기 쌓입니다.</div>
             </sc-if>
           </div>
         </div>
 
         <div style="background:#ffffff;border-radius:20px;display:flex;flex-direction:column;min-height:0;overflow:hidden;box-shadow:0 2px 10px rgba(28,27,26,0.05)">
-          <div style="padding:16px 22px 10px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#a8a5a2;font-weight:600">한국어</div>
+          <div style="padding:16px 22px 10px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6f6c6a;font-weight:600">한국어</div>
           <div ref="{{ koRef }}" onScroll="{{ onScrollKo }}" style="overflow-y:auto;padding:0 18px 22px;min-height:0;flex:1">
             <sc-for list="{{ paragraphs }}" as="para" hint-placeholder-count="4">
               <div style="margin-bottom:22px">
-                <div style="padding:0 6px 6px;font-size:11px;color:#b4b1ae">{{ para.ts }}</div>
+                <div style="padding:0 6px 6px;font-size:11px;color:#5f5c5a">{{ para.ts }}</div>
                 <div style="font-size:{{ koFont }};line-height:1.9;text-wrap:pretty">
                   <sc-for list="{{ para.sentences }}" as="sen" hint-placeholder-count="3"><span style="background:{{ sen.bg }};border-radius:9px;padding:3px 6px;margin:0 -6px;cursor:pointer;transition:background 130ms ease;-webkit-box-decoration-break:clone;box-decoration-break:clone" onClick="{{ sen.onSelect }}" onMouseEnter="{{ sen.onEnter }}" onMouseLeave="{{ sen.onLeave }}">{{ sen.ko }}</span> </sc-for>
                 </div>
@@ -167,7 +167,7 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:18px">
         <div>
           <div style="font-size:19px;font-weight:700;letter-spacing:-0.01em">저장된 스크립트</div>
-          <div style="font-size:13px;color:#8a8785">강의가 끝나면 스크립트·타임스탬프·요약이 자동 저장됩니다.</div>
+          <div style="font-size:13px;color:#5f5c5a">강의가 끝나면 스크립트·타임스탬프·요약이 자동 저장됩니다.</div>
         </div>
         <input placeholder="과목명 또는 키워드 검색" value="{{ query }}" onChange="{{ setQuery }}" style="margin-left:auto;width:260px;padding:10px 16px;border-radius:999px;border:1px solid rgba(28,27,26,0.09);background:#ffffff;font-family:Archivo;font-size:13px;color:#1c1b1a">
       </div>
@@ -179,13 +179,13 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px">
         <sc-for list="{{ sessions }}" as="sess" hint-placeholder-count="5">
           <div style="background:#ffffff;border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:box-shadow 150ms ease;box-shadow:0 2px 10px rgba(28,27,26,0.05)" style-hover="box-shadow:0 8px 24px rgba(28,27,26,0.12)" onClick="{{ sess.onOpen }}">
-            <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#b4b1ae;font-weight:600">{{ sess.course }}</div>
+            <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#5f5c5a;font-weight:600">{{ sess.course }}</div>
             <div style="font-size:17px;font-weight:700;letter-spacing:-0.01em">{{ sess.title }}</div>
-            <div style="font-size:12px;color:#8a8785">{{ sess.duration }} &nbsp;·&nbsp; {{ sess.date }}</div>
+            <div style="font-size:12px;color:#5f5c5a">{{ sess.duration }} &nbsp;·&nbsp; {{ sess.date }}</div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
               <span style="font-size:11px;padding:5px 12px;border-radius:999px;background:#f1efed;color:#6f6c6a">{{ sess.tagLabel }}</span>
               <div style="display:flex;align-items:center;gap:6px">
-                <button style="width:30px;height:30px;border-radius:10px;border:none;background:none;color:#c2bfbc;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none" style-hover="background:#fdece8;color:#9e2614" onClick="{{ sess.onDelete }}" title="삭제">
+                <button style="width:30px;height:30px;border-radius:10px;border:none;background:none;color:#6f6c6a;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none" style-hover="background:#fdece8;color:#9e2614" onClick="{{ sess.onDelete }}" title="삭제">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg>
                 </button>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c2bfbc" stroke-width="2" stroke-linecap="round"><path d="M9 5 16 12 9 19"></path></svg>
@@ -195,7 +195,7 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
         </sc-for>
       </div>
       <sc-if value="{{ noSessions }}" hint-placeholder-val="{{ false }}">
-        <div style="padding:44px 26px;text-align:center;font-size:14px;color:#a8a5a2;line-height:1.7;background:#ffffff;border-radius:20px;box-shadow:0 2px 10px rgba(28,27,26,0.05)">{{ emptyListText }}</div>
+        <div style="padding:44px 26px;text-align:center;font-size:14px;color:#5f5c5a;line-height:1.7;background:#ffffff;border-radius:20px;box-shadow:0 2px 10px rgba(28,27,26,0.05)">{{ emptyListText }}</div>
       </sc-if>
     </div>
     </sc-if>
@@ -207,9 +207,9 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5 8 12 15 19"></path></svg>
         </button>
         <div style="min-width:0;flex:1">
-          <input value="{{ selected.course }}" onChange="{{ setSelectedCourse }}" placeholder="과목명" style="border:none;background:none;padding:0;font-family:Archivo;font-weight:600;font-size:12px;letter-spacing:0.04em;color:#a8a5a2;width:100%;max-width:280px">
+          <input value="{{ selected.course }}" onChange="{{ setSelectedCourse }}" placeholder="과목명" style="border:none;background:none;padding:0;font-family:Archivo;font-weight:600;font-size:12px;letter-spacing:0.04em;color:#5f5c5a;width:100%;max-width:280px">
           <input value="{{ selected.title }}" onChange="{{ setSelectedTitle }}" placeholder="강의 제목" style="border:none;background:none;padding:0;font-family:Archivo;font-weight:700;font-size:19px;letter-spacing:-0.01em;color:#1c1b1a;width:100%;max-width:420px">
-          <div style="font-size:13px;color:#8a8785;margin-top:2px">{{ selected.date }} · {{ selected.duration }}</div>
+          <div style="font-size:13px;color:#5f5c5a;margin-top:2px">{{ selected.date }} · {{ selected.duration }}</div>
         </div>
         <div style="display:flex;gap:8px;margin-left:auto">
           <button style="display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border-radius:999px;border:none;background:#1c1b1a;color:#f7f6f5;font-family:Archivo;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;flex:none" style-hover="background:#333130" onClick="{{ toggleHeaderPlay }}">
@@ -238,7 +238,7 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
           </div>
         </sc-if>
         <div style="background:#ffffff;border-radius:20px;padding:20px 22px;box-shadow:0 2px 10px rgba(28,27,26,0.05)">
-          <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#a8a5a2;font-weight:600;margin-bottom:12px">자동 요약</div>
+          <div style="font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6f6c6a;font-weight:600;margin-bottom:12px">자동 요약</div>
           <div style="display:flex;flex-direction:column;gap:9px">
             <sc-for list="{{ summaryPoints }}" as="pt" hint-placeholder-count="4">
               <div style="display:flex;gap:11px;align-items:flex-start;font-size:15px;line-height:1.6">
@@ -247,7 +247,7 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
               </div>
             </sc-for>
             <sc-if value="{{ noSummary }}" hint-placeholder-val="{{ false }}">
-              <div style="font-size:14px;color:#c2bfbc">요약을 생성하는 중…</div>
+              <div style="font-size:14px;color:#6f6c6a">요약을 생성하는 중…</div>
             </sc-if>
           </div>
         </div>
@@ -255,12 +255,12 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
 
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;padding:16px 18px 18px;flex:1;min-height:0">
         <div style="background:#ffffff;border-radius:20px;display:flex;flex-direction:column;min-height:0;overflow:hidden;box-shadow:0 2px 10px rgba(28,27,26,0.05)">
-          <div style="padding:16px 22px 10px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#a8a5a2;font-weight:600">English</div>
+          <div style="padding:16px 22px 10px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6f6c6a;font-weight:600">English</div>
           <div ref="{{ enRef }}" onScroll="{{ onScrollEn }}" style="overflow-y:auto;padding:0 18px 22px;min-height:0;flex:1">
             <sc-for list="{{ paragraphs }}" as="para" hint-placeholder-count="4">
               <div style="margin-bottom:22px">
-                <div style="display:flex;align-items:center;gap:8px;padding:0 6px 6px;font-size:11px;color:#b4b1ae">
-                  <button style="border:none;background:none;padding:0;display:flex;cursor:pointer;color:#b4b1ae" style-hover="color:#ec3013" onClick="{{ para.onPlay }}" title="문단 다시듣기">
+                <div style="display:flex;align-items:center;gap:8px;padding:0 6px 6px;font-size:11px;color:#5f5c5a">
+                  <button style="border:none;background:none;padding:0;display:flex;cursor:pointer;color:#5f5c5a" style-hover="color:#ec3013" onClick="{{ para.onPlay }}" title="문단 다시듣기">
                     <sc-if value="{{ para.isPlaying }}" hint-placeholder-val="{{ false }}">
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1.5"></rect><rect x="14" y="4" width="4" height="16" rx="1.5"></rect></svg>
                     </sc-if>
@@ -278,11 +278,11 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
           </div>
         </div>
         <div style="background:#ffffff;border-radius:20px;display:flex;flex-direction:column;min-height:0;overflow:hidden;box-shadow:0 2px 10px rgba(28,27,26,0.05)">
-          <div style="padding:16px 22px 10px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#a8a5a2;font-weight:600">한국어</div>
+          <div style="padding:16px 22px 10px;font-size:11px;letter-spacing:0.12em;text-transform:uppercase;color:#6f6c6a;font-weight:600">한국어</div>
           <div ref="{{ koRef }}" onScroll="{{ onScrollKo }}" style="overflow-y:auto;padding:0 18px 22px;min-height:0;flex:1">
             <sc-for list="{{ paragraphs }}" as="para" hint-placeholder-count="4">
               <div style="margin-bottom:22px">
-                <div style="padding:0 6px 6px;font-size:11px;color:#b4b1ae">{{ para.ts }}</div>
+                <div style="padding:0 6px 6px;font-size:11px;color:#5f5c5a">{{ para.ts }}</div>
                 <div style="font-size:{{ koFont }};line-height:1.9;text-wrap:pretty">
                   <sc-for list="{{ para.sentences }}" as="sen" hint-placeholder-count="3"><span style="background:{{ sen.bg }};border-radius:9px;padding:3px 6px;margin:0 -6px;cursor:pointer;transition:background 130ms ease;-webkit-box-decoration-break:clone;box-decoration-break:clone" onClick="{{ sen.onSelect }}" onMouseEnter="{{ sen.onEnter }}" onMouseLeave="{{ sen.onLeave }}">{{ sen.ko }}</span> </sc-for>
                 </div>
@@ -297,12 +297,12 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
     <sc-if value="{{ isSettings }}" hint-placeholder-val="{{ false }}">
     <div style="padding:26px;overflow-y:auto;flex:1;min-height:0">
       <div style="font-size:19px;font-weight:700;letter-spacing:-0.01em;margin-bottom:4px">설정</div>
-      <div style="font-size:13px;color:#8a8785;margin-bottom:20px">수업 중에는 손대지 않아도 되도록 미리 맞춰두세요.</div>
+      <div style="font-size:13px;color:#5f5c5a;margin-bottom:20px">수업 중에는 손대지 않아도 되도록 미리 맞춰두세요.</div>
 
       <div style="display:flex;flex-direction:column;gap:14px;max-width:720px">
         <div style="background:#fff;border-radius:20px;padding:20px 22px;box-shadow:0 2px 10px rgba(28,27,26,0.05)">
           <div style="font-size:15px;font-weight:700;margin-bottom:4px">오디오 소스 · 마이크</div>
-          <div style="font-size:12px;color:#a8a5a2;margin-bottom:14px">어떤 마이크로 강연 소리를 받을지 고릅니다. (크롬은 실제로는 OS 기본 입력 장치를 사용하며, 여기서 고른 장치는 우선 추천값으로만 쓰입니다.)</div>
+          <div style="font-size:12px;color:#5f5c5a;margin-bottom:14px">어떤 마이크로 강연 소리를 받을지 고릅니다. (크롬은 실제로는 OS 기본 입력 장치를 사용하며, 여기서 고른 장치는 우선 추천값으로만 쓰입니다.)</div>
           <sc-if value="{{ isFileProtocol }}" hint-placeholder-val="{{ false }}">
             <div style="margin-bottom:12px;padding:10px 14px;border-radius:12px;background:#fdece8;color:#9e2614;font-size:12px;line-height:1.55">지금 file://로 열려 있어 크롬이 마이크 권한을 저장하지 못합니다. 웹 주소(http/https)로 열어야 정상 동작합니다.</div>
           </sc-if>
@@ -318,7 +318,7 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
 
         <div style="background:#fff;border-radius:20px;padding:20px 22px;box-shadow:0 2px 10px rgba(28,27,26,0.05)">
           <div style="font-size:15px;font-weight:700;margin-bottom:4px">글자 크기</div>
-          <div style="font-size:12px;color:#a8a5a2;margin-bottom:14px">번역 화면의 원문·번역 본문 크기에 바로 적용됩니다.</div>
+          <div style="font-size:12px;color:#5f5c5a;margin-bottom:14px">번역 화면의 원문·번역 본문 크기에 바로 적용됩니다.</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px">
             <sc-for list="{{ fontOptions }}" as="opt" hint-placeholder-count="4">
               <button style="padding:9px 18px;border-radius:999px;border:none;cursor:pointer;font-family:Archivo;font-weight:600;font-size:13px;white-space:nowrap;{{ opt.style }}" onClick="{{ opt.onPick }}">{{ opt.label }}</button>
@@ -329,13 +329,13 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
 
         <div style="background:#fff;border-radius:20px;padding:20px 22px;box-shadow:0 2px 10px rgba(28,27,26,0.05)">
           <div style="font-size:15px;font-weight:700;margin-bottom:14px">언어</div>
-          <div style="font-size:12px;color:#a8a5a2;margin-bottom:8px">강연 언어</div>
+          <div style="font-size:12px;color:#5f5c5a;margin-bottom:8px">강연 언어</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
             <sc-for list="{{ srcOptions }}" as="opt" hint-placeholder-count="3">
               <button style="padding:9px 16px;border-radius:999px;border:none;cursor:pointer;font-family:Archivo;font-weight:600;font-size:13px;white-space:nowrap;{{ opt.style }}" onClick="{{ opt.onPick }}">{{ opt.label }}</button>
             </sc-for>
           </div>
-          <div style="font-size:12px;color:#a8a5a2;margin-bottom:8px">번역 언어</div>
+          <div style="font-size:12px;color:#5f5c5a;margin-bottom:8px">번역 언어</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px">
             <sc-for list="{{ dstOptions }}" as="opt" hint-placeholder-count="2">
               <button style="padding:9px 16px;border-radius:999px;border:none;cursor:pointer;font-family:Archivo;font-weight:600;font-size:13px;white-space:nowrap;{{ opt.style }}" onClick="{{ opt.onPick }}">{{ opt.label }}</button>
@@ -345,7 +345,7 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
 
         <div style="background:#fff;border-radius:20px;padding:20px 22px;box-shadow:0 2px 10px rgba(28,27,26,0.05)">
           <div style="font-size:15px;font-weight:700;margin-bottom:4px">번역 엔진</div>
-          <div style="font-size:12px;color:#a8a5a2;margin-bottom:14px">{{ engineNote }}</div>
+          <div style="font-size:12px;color:#5f5c5a;margin-bottom:14px">{{ engineNote }}</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px">
             <sc-for list="{{ engineOptions }}" as="opt" hint-placeholder-count="4">
               <button style="padding:9px 16px;border-radius:999px;border:none;cursor:pointer;font-family:Archivo;font-weight:600;font-size:13px;white-space:nowrap;{{ opt.style }}" onClick="{{ opt.onPick }}">{{ opt.label }}</button>
@@ -353,7 +353,7 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
           </div>
           <sc-if value="{{ needsGptModel }}" hint-placeholder-val="{{ false }}">
             <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(28,27,26,0.07)">
-              <div style="font-size:12px;color:#a8a5a2;margin-bottom:8px">GPT 모델</div>
+              <div style="font-size:12px;color:#5f5c5a;margin-bottom:8px">GPT 모델</div>
               <div style="display:flex;flex-wrap:wrap;gap:8px">
                 <sc-for list="{{ gptModelOptions }}" as="opt" hint-placeholder-count="3">
                   <button style="padding:9px 16px;border-radius:999px;border:none;cursor:pointer;font-family:Archivo;font-weight:600;font-size:13px;white-space:nowrap;{{ opt.style }}" onClick="{{ opt.onPick }}">{{ opt.label }}</button>
@@ -363,7 +363,7 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
           </sc-if>
           <sc-if value="{{ needsKey }}" hint-placeholder-val="{{ false }}">
             <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(28,27,26,0.07)">
-              <div style="font-size:12px;color:#a8a5a2;margin-bottom:8px">API 키</div>
+              <div style="font-size:12px;color:#5f5c5a;margin-bottom:8px">API 키</div>
               <div style="display:flex;gap:8px;flex-wrap:wrap">
                 <input type="password" value="{{ apiKey }}" onChange="{{ setApiKey }}" placeholder="sk-••••••••••••••••" style="flex:1;min-width:220px;padding:10px 16px;border-radius:14px;border:1px solid rgba(28,27,26,0.09);background:#f9f8f7;font-family:Archivo;font-size:13px;color:#1c1b1a">
                 <button style="padding:10px 18px;border-radius:14px;border:none;background:#1c1b1a;color:#f7f6f5;font-family:Archivo;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;flex:none" style-hover="background:#333130" onClick="{{ saveKey }}">연결 확인</button>
@@ -377,7 +377,7 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
 
         <div style="background:#fff;border-radius:20px;padding:20px 22px;box-shadow:0 2px 10px rgba(28,27,26,0.05)">
           <div style="font-size:15px;font-weight:700;margin-bottom:4px">음성 인식</div>
-          <div style="font-size:12px;color:#a8a5a2;margin-bottom:14px">{{ sttNote }}</div>
+          <div style="font-size:12px;color:#5f5c5a;margin-bottom:14px">{{ sttNote }}</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px">
             <sc-for list="{{ sttOptions }}" as="opt" hint-placeholder-count="2">
               <button style="padding:9px 16px;border-radius:999px;border:none;cursor:pointer;font-family:Archivo;font-weight:600;font-size:13px;white-space:nowrap;{{ opt.style }}" onClick="{{ opt.onPick }}">{{ opt.label }}</button>
@@ -385,35 +385,35 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
           </div>
           <sc-if value="{{ isWhisper }}" hint-placeholder-val="{{ true }}">
             <div style="margin-top:16px;padding-top:16px;border-top:1px solid rgba(28,27,26,0.07)">
-              <div style="font-size:12px;color:#a8a5a2;margin-bottom:8px">인식 모델</div>
+              <div style="font-size:12px;color:#5f5c5a;margin-bottom:8px">인식 모델</div>
               <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px">
                 <sc-for list="{{ sttModelOptions }}" as="opt" hint-placeholder-count="2">
                   <button style="padding:9px 16px;border-radius:999px;border:none;cursor:pointer;font-family:Archivo;font-weight:600;font-size:13px;white-space:nowrap;{{ opt.style }}" onClick="{{ opt.onPick }}">{{ opt.label }}</button>
                 </sc-for>
               </div>
-              <div style="font-size:12px;color:#a8a5a2;margin-bottom:8px">OpenAI API 키</div>
+              <div style="font-size:12px;color:#5f5c5a;margin-bottom:8px">OpenAI API 키</div>
               <input type="password" value="{{ sttKeyValue }}" onChange="{{ setSttKey }}" placeholder="sk-••••••••••••••••" style="width:100%;padding:10px 16px;border-radius:14px;border:1px solid rgba(28,27,26,0.09);background:#f9f8f7;font-family:Archivo;font-size:13px;color:#1c1b1a">
-              <div style="margin-top:10px;font-size:12px;color:#a8a5a2">번역 엔진을 GPT로 쓰면 위 번역 키를 그대로 사용하므로 비워두어도 됩니다.</div>
+              <div style="margin-top:10px;font-size:12px;color:#5f5c5a">번역 엔진을 GPT로 쓰면 위 번역 키를 그대로 사용하므로 비워두어도 됩니다.</div>
             </div>
           </sc-if>
         </div>
 
         <div style="background:#fff;border-radius:20px;padding:20px 22px;box-shadow:0 2px 10px rgba(28,27,26,0.05)">
           <div style="font-size:15px;font-weight:700;margin-bottom:4px">녹음 저장</div>
-          <div style="font-size:12px;color:#a8a5a2;margin-bottom:14px">녹음은 기기 안에 자동 저장되어 앱을 다시 열어도 다시듣기가 됩니다.</div>
+          <div style="font-size:12px;color:#5f5c5a;margin-bottom:14px">녹음은 기기 안에 자동 저장되어 앱을 다시 열어도 다시듣기가 됩니다.</div>
           <div style="font-size:13px;color:#6f6c6a;margin-bottom:14px">{{ storageLine }}</div>
           <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
             <button style="padding:10px 18px;border-radius:14px;border:none;background:#1c1b1a;color:#f7f6f5;font-family:Archivo;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;flex:none" style-hover="background:#333130" onClick="{{ chooseFolder }}">저장 폴더 지정</button>
-            <div style="font-size:12px;color:#a8a5a2">{{ folderLine }}</div>
+            <div style="font-size:12px;color:#5f5c5a">{{ folderLine }}</div>
           </div>
           <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(28,27,26,0.07);display:flex;flex-wrap:wrap;gap:8px;align-items:center">
             <button style="padding:9px 16px;border-radius:14px;border:1px solid rgba(28,27,26,0.12);background:#ffffff;color:#1c1b1a;font-family:Archivo;font-weight:600;font-size:13px;cursor:pointer;white-space:nowrap;flex:none" style-hover="background:#f1efed" onClick="{{ copyDiagnostics }}">문장·재생 진단 정보 복사</button>
-            <div style="font-size:12px;color:#a8a5a2">재생 시점이 어긋날 때 눌러서 개발자에게 붙여넣어 주세요.</div>
+            <div style="font-size:12px;color:#5f5c5a">재생 시점이 어긋날 때 눌러서 개발자에게 붙여넣어 주세요.</div>
           </div>
           <div style="margin-top:14px;padding-top:14px;border-top:1px solid rgba(28,27,26,0.07);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap">
-            <span style="font-size:12px;color:#a8a5a2">실행 중인 버전</span>
+            <span style="font-size:12px;color:#5f5c5a">실행 중인 버전</span>
             <span style="font-family:ui-monospace, SFMono-Regular, Menlo, monospace;font-size:13px;font-weight:600;color:#1c1b1a">{{ appVersion }}</span>
-            <span style="font-size:12px;color:#c2bfbc">{{ swVersion }}</span>
+            <span style="font-size:12px;color:#6f6c6a">{{ swVersion }}</span>
           </div>
           <div style="margin-top:14px;padding:12px 16px;border-radius:14px;background:#f7f6f5;font-size:12px;color:#6f6c6a;line-height:1.7">아이패드는 폴더 지정을 지원하지 않습니다. 강의 상세 화면의 “녹음 내보내기”를 누르면 “파일” 앱에서 저장 위치를 고를 수 있습니다.</div>
         </div>
@@ -464,7 +464,7 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
 <script type="text/x-dc" data-dc-script>
 const STORE_KEY = 'lectureTranslatorSessions_v1';
 const PREFS_KEY = 'lectureTranslatorPrefs_v1';
-const APP_VERSION = 'v16';
+const APP_VERSION = 'v21';
 const PREF_KEYS = ['fontScale', 'micDevice', 'srcLang', 'dstLang', 'tone', 'engine', 'apiKey', 'gptModel', 'stt', 'sttKey', 'sttModel', 'liveCourse', 'hiddenIds'];
 
 class Component extends DCLogic {
@@ -590,12 +590,17 @@ class Component extends DCLogic {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       this._micStream = stream;
       this._chunks = [];
+      this._sttSentIndex = 1;
+      this._sttLastMark = 0;
+      this._headerSent = false;
+      this._headerAudioMs = null;
+      this._headerMeasuring = false;
       this._recordingStartMs = Date.now();
       this._audioBase = 0;
       this._audioResumeAt = Date.now();
       const rec = new MediaRecorder(stream);
       rec.ondataavailable = (e) => { if (e.data && e.data.size) this._chunks.push(e.data); };
-      rec.start(500);
+      rec.start(1000);
       this._recorder = rec;
       this._recordingsBySession.live = { chunks: this._chunks, startMs: this._recordingStartMs };
     } catch (e) { /* recording unavailable — replay will fall back to text-to-speech */ }
@@ -762,6 +767,9 @@ class Component extends DCLogic {
       audioDurationMs: audioDur,
       blobSize, blobType,
       audioClockNow: this.audioNow(),
+      sliceMode: 'gapless-shared-recorder',
+      headerAudioMs: this._headerAudioMs,
+      chunkCount: (this._chunks || []).length,
       sentences: (this._diag || []).slice(-40),
     };
     const txt = JSON.stringify(report, null, 1);
@@ -937,47 +945,63 @@ class Component extends DCLogic {
   }
 
   startSttChunkLoop() {
-    const stream = this._micStream;
-    if (!stream) { this.setState({ notice: this.STT_UNSUPPORTED_NOTICE, listening: false }); return; }
-    const mime = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4'
-      : MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus'
-      : MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : '';
-    const CHUNK_MS = 4000;
-    const cycle = () => {
+    const CHUNK_MS = 6000;
+    if (this._sttSentIndex == null) this._sttSentIndex = 1;
+    if (this._sttLastMark == null) this._sttLastMark = 0;
+    clearInterval(this._sttInterval);
+    this._sttInterval = setInterval(() => {
       if (!this.state.listening) return;
-      let parts = [];
-      let r;
-      try { r = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream); } catch (e) { return; }
-      const chunkStart = this.audioNow();
-      r.ondataavailable = (e) => { if (e.data && e.data.size) parts.push(e.data); };
-      r.onstop = () => {
-        const chunkEnd = Math.max(chunkStart + 200, this.audioNow());
-        if (parts.length) this.enqueueTranscribe(new Blob(parts, { type: r.mimeType || mime || 'audio/webm' }), chunkStart, chunkEnd);
-        if (this.state.listening) cycle();
-      };
-      this._sttChunkRec = r;
-      try { r.start(); } catch (e) { return; }
-      this._sttChunkTimer = setTimeout(() => { try { if (r.state !== 'inactive') r.stop(); } catch (e) {} }, CHUNK_MS);
-    };
-    cycle();
+      const chunks = this._chunks || [];
+      if (chunks.length <= this._sttSentIndex) return;
+      const header = chunks[0];
+      if (!header) return;
+      const firstSlice = !this._headerSent;
+      const parts = firstSlice ? chunks.slice(0) : [header].concat(chunks.slice(this._sttSentIndex));
+      this._headerSent = true;
+      this._sttSentIndex = chunks.length;
+      const start = this._sttLastMark;
+      const end = Math.max(start + 500, this.audioNow());
+      this._sttLastMark = end;
+      this.measureHeaderMs(header);
+      this.enqueueTranscribe(new Blob(parts, { type: header.type || 'audio/webm' }), start, end, firstSlice ? 0 : (this._headerAudioMs || 0));
+    }, CHUNK_MS);
   }
 
   stopSttChunkLoop() {
+    clearInterval(this._sttInterval);
+    this._sttInterval = null;
+    const chunks = this._chunks || [];
+    if (chunks.length > this._sttSentIndex && chunks[0]) {
+      const firstSlice = !this._headerSent;
+      const parts = firstSlice ? chunks.slice(0) : [chunks[0]].concat(chunks.slice(this._sttSentIndex));
+      const start = this._sttLastMark;
+      const end = Math.max(start + 500, this.audioNow());
+      this._headerSent = true;
+      this._sttSentIndex = chunks.length;
+      this.enqueueTranscribe(new Blob(parts, { type: chunks[0].type || 'audio/webm' }), start, end, firstSlice ? 0 : (this._headerAudioMs || 0));
+    }
     if (this._sttQueue) this._sttQueue = this._sttQueue.then(() => this.flushSttTail()).catch(() => {});
     else this.flushSttTail();
-    clearTimeout(this._sttChunkTimer);
-    this._sttChunkTimer = null;
-    const r = this._sttChunkRec;
-    this._sttChunkRec = null;
-    if (r && r.state !== 'inactive') { try { r.stop(); } catch (e) {} }
   }
 
-  enqueueTranscribe(blob, chunkStart, chunkEnd) {
+  measureHeaderMs(header) {
+    if (this._headerAudioMs != null || this._headerMeasuring || !header) return;
+    this._headerMeasuring = true;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) { this._headerAudioMs = 0; return; }
+    if (!this._audioCtx) this._audioCtx = new Ctx();
+    header.arrayBuffer()
+      .then(b => this._audioCtx.decodeAudioData(b))
+      .then(buf => { this._headerAudioMs = Math.round(buf.duration * 1000); })
+      .catch(() => { this._headerAudioMs = 0; });
+  }
+
+  enqueueTranscribe(blob, chunkStart, chunkEnd, headerMs) {
     this._sttPending = (this._sttPending || 0) + 1;
     const held = this._sttTail && this._sttTail.text ? this._sttTail.text : '';
     if (held) this.setInterim(held);
     this._sttQueue = (this._sttQueue || Promise.resolve())
-      .then(() => this.transcribeBlob(blob, chunkStart, chunkEnd))
+      .then(() => this.transcribeBlob(blob, chunkStart, chunkEnd, headerMs))
       .catch(() => {})
       .then(() => {
         this._sttPending = Math.max(0, (this._sttPending || 1) - 1);
@@ -985,7 +1009,7 @@ class Component extends DCLogic {
       });
   }
 
-  async transcribeBlob(blob, chunkStart, chunkEnd) {
+  async transcribeBlob(blob, chunkStart, chunkEnd, headerMs) {
     const key = this.sttKey();
     if (!key) return;
     const type = blob.type || '';
@@ -1017,11 +1041,36 @@ class Component extends DCLogic {
     const cs = chunkStart != null ? chunkStart : 0;
     const ce = chunkEnd != null ? chunkEnd : cs + 6000;
     if (!text) { this.ageSttTail(ce); return; }
-    const clean = text.replace(/\[[^\]]*\]/g, ' ').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+    let clean = text.replace(/\[[^\]]*\]/g, ' ').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+    let segs = Array.isArray(data.segments) ? data.segments : null;
+
+    // the init header re-sends the opening audio; drop it from text AND timing
+    const hdrSec = (headerMs || 0) / 1000;
+    if (hdrSec > 0.05) {
+      if (segs && segs.length) {
+        const kept = segs.filter(s => (s.end != null ? s.end : 0) > hdrSec + 0.05);
+        segs = kept.map(s => Object.assign({}, s, {
+          start: Math.max(0, (s.start || 0) - hdrSec),
+          end: Math.max(0, (s.end != null ? s.end : 0) - hdrSec),
+        }));
+        clean = segs.map(s => (s.text || '').trim()).filter(Boolean).join(' ').replace(/\s+/g, ' ').trim();
+      } else {
+        const words = clean.split(/\s+/);
+        const sliceSec = Math.max(0.1, (ce - cs) / 1000);
+        const dropFrac = Math.min(0.9, hdrSec / (hdrSec + sliceSec));
+        clean = words.slice(Math.floor(words.length * dropFrac)).join(' ').trim();
+      }
+    }
+
     if (!this.isMeaningful(clean) || this.isSilenceArtifact(clean)) { this.ageSttTail(ce); return; }
     this._sttPrompt = clean.slice(-180);
 
-    const atMs = this.buildTimeMapper(clean, Array.isArray(data.segments) ? data.segments : null, cs, ce);
+    const atMs = this.buildTimeMapper(clean, segs, cs, ce);
+    const sliceDur = (ce - cs) / 1000;
+    let lastSegEnd = null;
+    if (segs && segs.length) segs.forEach(s => { if (s.end != null) lastSegEnd = Math.max(lastSegEnd == null ? 0 : lastSegEnd, s.end); });
+    const pausedAtEnd = lastSegEnd != null ? (sliceDur - lastSegEnd) >= 0.45 : false;
+    const forceTail = !pausedAtEnd;
     const tail = this._sttTail && this._sttTail.text ? this._sttTail : null;
     const prefix = tail ? tail.text + ' ' : '';
     const combined = prefix + clean;
@@ -1033,7 +1082,7 @@ class Component extends DCLogic {
     spans.forEach((sp, i) => {
       const isLast = i === spans.length - 1;
       const startMs = sp.from < prefix.length ? tail.startMs : atMs(sp.from - prefix.length);
-      if (isLast && !sp.complete) {
+      if (isLast && (!sp.complete || forceTail)) {
         const bornAt = tail && tail.bornAt != null ? tail.bornAt : startMs;
         this._sttTail = { text: sp.text, startMs, bornAt, age: tail ? (tail.age || 0) : 0, lastEnd: ce };
         tailText = sp.text;
