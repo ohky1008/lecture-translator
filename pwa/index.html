@@ -177,7 +177,12 @@ body { margin: 0; background: #e6e4e1; padding: env(safe-area-inset-top) env(saf
             <div style="font-size:12px;color:#8a8785">{{ sess.duration }} &nbsp;·&nbsp; {{ sess.date }}</div>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
               <span style="font-size:11px;padding:5px 12px;border-radius:999px;background:#f1efed;color:#6f6c6a">{{ sess.tagLabel }}</span>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c2bfbc" stroke-width="2" stroke-linecap="round"><path d="M9 5 16 12 9 19"></path></svg>
+              <div style="display:flex;align-items:center;gap:6px">
+                <button style="width:30px;height:30px;border-radius:10px;border:none;background:none;color:#c2bfbc;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:none" style-hover="background:#fdece8;color:#9e2614" onClick="{{ sess.onDelete }}" title="삭제">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg>
+                </button>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c2bfbc" stroke-width="2" stroke-linecap="round"><path d="M9 5 16 12 9 19"></path></svg>
+              </div>
             </div>
           </div>
         </sc-for>
@@ -425,7 +430,7 @@ body { margin: 0; background: #e6e4e1; padding: env(safe-area-inset-top) env(saf
 <script type="text/x-dc" data-dc-script>
 const STORE_KEY = 'lectureTranslatorSessions_v1';
 const PREFS_KEY = 'lectureTranslatorPrefs_v1';
-const PREF_KEYS = ['fontScale', 'micDevice', 'srcLang', 'dstLang', 'tone', 'engine', 'apiKey', 'gptModel', 'stt', 'sttKey', 'sttModel', 'liveCourse'];
+const PREF_KEYS = ['fontScale', 'micDevice', 'srcLang', 'dstLang', 'tone', 'engine', 'apiKey', 'gptModel', 'stt', 'sttKey', 'sttModel', 'liveCourse', 'hiddenIds'];
 
 class Component extends DCLogic {
   state = {
@@ -434,7 +439,7 @@ class Component extends DCLogic {
     liveParagraphs: [], liveBuffer: [],
     hoveredId: null, selectedId: null, selectionPos: null, tooltip: null,
     query: '', selectedSessionId: null, playingParaId: null, playingSentenceId: null, headerPlaying: false, justEnded: false,
-    savedSessions: [], liveCourse: '', liveTitle: '', titleOverrides: {}, courseFilter: '전체',
+    savedSessions: [], liveCourse: '', liveTitle: '', titleOverrides: {}, courseFilter: '전체', hiddenIds: [],
     fontScale: 1, micDevice: 'built-in', srcLang: 'en', dstLang: 'ko', tone: 'natural',
     engine: 'built-in', apiKey: '', keySaved: false, gptModel: 'gpt-4o-mini', stt: 'whisper', sttKey: '', sttModel: 'whisper-1',
   };
@@ -558,20 +563,80 @@ class Component extends DCLogic {
   };
 
   playRange(key, scopeId, fallbackText, startMs, endMs, onToggleOff) {
-    if (this._activeKey === key) { if (this.audioEl) this.audioEl.pause(); this._activeKey = null; onToggleOff(); return true; }
+    if (this._activeKey === key) { this.stopPlayback(); this._activeKey = null; onToggleOff(); return true; }
     const rec = this.findRecording(scopeId);
-    if (this.audioEl) this.audioEl.pause();
+    this.stopPlayback();
     if (rec && rec.chunks && rec.chunks.length) {
-      const blob = new Blob(rec.chunks, { type: (rec.chunks[0] && rec.chunks[0].type) || 'audio/webm' });
-      const url = URL.createObjectURL(blob);
-      const el = this.audioEl;
-      this._activeKey = key; this._activeEndMs = endMs != null ? endMs : null; this._activeOnToggleOff = onToggleOff;
-      el.src = url;
-      el.onloadedmetadata = () => { el.currentTime = (startMs || 0) / 1000; el.play().catch(() => {}); };
+      this._activeKey = key; this._activeOnToggleOff = onToggleOff;
+      this.playDecodedRange(key, scopeId, rec, startMs || 0, endMs, fallbackText, onToggleOff);
       return true;
     }
     this.speak(fallbackText, key, onToggleOff);
     return false;
+  }
+
+  stopPlayback() {
+    this._activeEndMs = null;
+    if (this._srcNode) {
+      try { this._srcNode.onended = null; this._srcNode.stop(); } catch (e) {}
+      this._srcNode = null;
+    }
+    if (this.audioEl) { try { this.audioEl.pause(); } catch (e) {} }
+  }
+
+  async playDecodedRange(key, scopeId, rec, startMs, endMs, fallbackText, onToggleOff) {
+    let buffer = null;
+    try {
+      buffer = await this.getDecoded(scopeId, rec);
+    } catch (e) { buffer = null; }
+    if (this._activeKey !== key) return;
+    if (!buffer) { this.playViaElement(key, rec, startMs, endMs, fallbackText, onToggleOff); return; }
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!this._audioCtx) this._audioCtx = new Ctx();
+    const ctx = this._audioCtx;
+    if (ctx.state === 'suspended') { try { await ctx.resume(); } catch (e) {} }
+    const dur = buffer.duration;
+    const offset = Math.min(Math.max(0, startMs / 1000), Math.max(0, dur - 0.05));
+    const length = endMs != null ? Math.max(0.15, endMs / 1000 - offset) : Math.max(0.15, dur - offset);
+    const node = ctx.createBufferSource();
+    node.buffer = buffer;
+    node.connect(ctx.destination);
+    node.onended = () => {
+      if (this._srcNode !== node) return;
+      this._srcNode = null;
+      if (this._activeKey === key) { this._activeKey = null; const cb = this._activeOnToggleOff; this._activeOnToggleOff = null; if (cb) cb(); }
+    };
+    this._srcNode = node;
+    try { node.start(0, offset, Math.min(length, Math.max(0.15, dur - offset))); }
+    catch (e) { this._srcNode = null; this.playViaElement(key, rec, startMs, endMs, fallbackText, onToggleOff); }
+  }
+
+  async getDecoded(scopeId, rec) {
+    if (this._decoded && this._decoded.id === scopeId && this._decoded.count === rec.chunks.length) return this._decoded.buffer;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    if (!this._audioCtx) this._audioCtx = new Ctx();
+    const blob = new Blob(rec.chunks, { type: (rec.chunks[0] && rec.chunks[0].type) || 'audio/webm' });
+    const bytes = await blob.arrayBuffer();
+    const buffer = await new Promise((resolve, reject) => {
+      const p = this._audioCtx.decodeAudioData(bytes, resolve, reject);
+      if (p && p.then) p.then(resolve, reject);
+    });
+    this._decoded = { id: scopeId, count: rec.chunks.length, buffer };
+    return buffer;
+  }
+
+  playViaElement(key, rec, startMs, endMs, fallbackText, onToggleOff) {
+    const el = this.audioEl;
+    if (!el) { this.speak(fallbackText, key, onToggleOff); return; }
+    const blob = new Blob(rec.chunks, { type: (rec.chunks[0] && rec.chunks[0].type) || 'audio/webm' });
+    const url = URL.createObjectURL(blob);
+    this._activeKey = key; this._activeEndMs = endMs != null ? endMs : null; this._activeOnToggleOff = onToggleOff;
+    el.src = url;
+    el.onloadedmetadata = () => {
+      try { el.currentTime = (startMs || 0) / 1000; } catch (e) {}
+      el.play().catch(() => { this.speak(fallbackText, key, onToggleOff); });
+    };
   }
   persist(sessions) {
     try { window.localStorage.setItem(STORE_KEY, JSON.stringify(sessions)); } catch (e) {}
@@ -611,9 +676,11 @@ class Component extends DCLogic {
       let parts = [];
       let r;
       try { r = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream); } catch (e) { return; }
+      const chunkStart = this._recordingStartMs ? Date.now() - this._recordingStartMs : 0;
       r.ondataavailable = (e) => { if (e.data && e.data.size) parts.push(e.data); };
       r.onstop = () => {
-        if (parts.length) this.enqueueTranscribe(new Blob(parts, { type: r.mimeType || mime || 'audio/webm' }));
+        const chunkEnd = this._recordingStartMs ? Date.now() - this._recordingStartMs : chunkStart + CHUNK_MS;
+        if (parts.length) this.enqueueTranscribe(new Blob(parts, { type: r.mimeType || mime || 'audio/webm' }), chunkStart, chunkEnd);
         if (this.state.listening) cycle();
       };
       this._sttChunkRec = r;
@@ -631,11 +698,11 @@ class Component extends DCLogic {
     if (r && r.state !== 'inactive') { try { r.stop(); } catch (e) {} }
   }
 
-  enqueueTranscribe(blob) {
+  enqueueTranscribe(blob, chunkStart, chunkEnd) {
     this._sttPending = (this._sttPending || 0) + 1;
     this.setState({ interim: this._sttPending > 0 ? '인식 중…' : '' });
     this._sttQueue = (this._sttQueue || Promise.resolve())
-      .then(() => this.transcribeBlob(blob))
+      .then(() => this.transcribeBlob(blob, chunkStart, chunkEnd))
       .catch(() => {})
       .then(() => {
         this._sttPending = Math.max(0, (this._sttPending || 1) - 1);
@@ -643,7 +710,7 @@ class Component extends DCLogic {
       });
   }
 
-  async transcribeBlob(blob) {
+  async transcribeBlob(blob, chunkStart, chunkEnd) {
     const key = this.sttKey();
     if (!key) return;
     const type = blob.type || '';
@@ -670,10 +737,35 @@ class Component extends DCLogic {
     const data = await res.json();
     const text = (data.text || '').trim();
     if (!text) return;
-    const clean = text.replace(/^\[.*?\]\s*/, '').trim();
-    if (!clean || /^\(.*\)$/.test(clean)) return;
+    const clean = text.replace(/\[[^\]]*\]/g, ' ').replace(/\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim();
+    if (!this.isMeaningful(clean) || this.isSilenceArtifact(clean)) return;
     this._sttPrompt = clean.slice(-180);
-    this.splitSentences(clean).forEach(s => this.addSentence(s));
+    const sentences = this.splitSentences(clean).filter(s => this.isMeaningful(s) && !this.isSilenceArtifact(s));
+    if (!sentences.length) return;
+    const span = Math.max(1, (chunkEnd != null ? chunkEnd : 0) - (chunkStart != null ? chunkStart : 0));
+    const totalChars = sentences.reduce((n, s) => n + s.length, 0) || 1;
+    let cursor = chunkStart != null ? chunkStart : 0;
+    sentences.forEach((s, i) => {
+      const share = Math.round(span * (s.length / totalChars));
+      const startMs = cursor;
+      const endMs = i === sentences.length - 1 ? (chunkEnd != null ? chunkEnd : cursor + share) : cursor + share;
+      cursor = endMs;
+      this.addSentence(s, startMs, endMs);
+    });
+  }
+
+  isMeaningful(text) {
+    const t = (text || '').replace(/[.…·\-—_,!?"'‘’“”\s]/g, '');
+    return t.length >= 2 && /[a-z0-9\u3131-\uD79D]/i.test(t);
+  }
+
+  isSilenceArtifact(text) {
+    const t = (text || '').trim().toLowerCase().replace(/[.!?…]+$/, '').trim();
+    if (!t) return true;
+    const junk = ['you', 'thank you', 'thanks for watching', 'thanks for watching!', 'bye', 'bye bye', 'okay', 'ok', 'uh', 'um', 'hmm', 'mm', 'mhm', 'yeah', 'so', 'the', 'music', 'applause', 'silence', 'blank_audio', 'inaudible', 'subscribe'];
+    if (junk.indexOf(t) !== -1) return true;
+    if (/amara\.org|subtitles? by|transcribed by|www\./i.test(t)) return true;
+    return false;
   }
 
   splitSentences(text) {
@@ -736,12 +828,14 @@ class Component extends DCLogic {
     this.setState({ listening: true, notice: '' });
   };
 
-  addSentence = (en) => {
+  addSentence = (en, startMsIn, endMsIn) => {
+    if (!this.isMeaningful(en)) return;
     const id = 's' + (++this._id);
-    const ts = this.stampFromSec(this.state.elapsed);
-    const endMs = this._recordingStartMs ? Date.now() - this._recordingStartMs : null;
-    const startMs = this._lastSentenceEndMs != null ? this._lastSentenceEndMs : 0;
+    const hasSpan = startMsIn != null && endMsIn != null && endMsIn > startMsIn;
+    const startMs = hasSpan ? startMsIn : (this._lastSentenceEndMs != null ? this._lastSentenceEndMs : 0);
+    const endMs = hasSpan ? endMsIn : (this._recordingStartMs ? Date.now() - this._recordingStartMs : null);
     if (endMs != null) this._lastSentenceEndMs = endMs;
+    const ts = hasSpan ? this.stampFromSec(Math.max(0, Math.floor(startMs / 1000))) : this.stampFromSec(this.state.elapsed);
     this.setState(s => {
       const buf = s.liveBuffer.concat([{ id, ts, en, ko: '번역 중…', pending: true, startMs, endMs }]);
       let paragraphs = s.liveParagraphs;
@@ -834,7 +928,12 @@ class Component extends DCLogic {
   async translateSentence(id, en) {
     let ko = '';
     try {
-      ko = (await this.callEngine(en)) || '(번역 결과 없음)';
+      ko = (await this.callEngine(en)) || '';
+      if (this.isRefusal(ko)) {
+        const retry = await this.callEngine(en).catch(() => '');
+        ko = this.isRefusal(retry) || !retry ? en : retry;
+      }
+      if (!ko) ko = en;
     } catch (e) {
       ko = '번역 실패 · ' + (e && e.message ? e.message : '알 수 없는 오류');
       this.setState({ notice: e && e.message ? e.message : '번역에 실패했습니다.' });
@@ -843,6 +942,30 @@ class Component extends DCLogic {
       liveBuffer: s.liveBuffer.map(x => (x.id === id ? { ...x, ko, pending: false } : x)),
       liveParagraphs: s.liveParagraphs.map(p => ({ ...p, sentences: p.sentences.map(x => (x.id === id ? { ...x, ko, pending: false } : x)) })),
     }));
+  }
+
+  deleteSession = (id, title, e) => {
+    if (e && e.stopPropagation) e.stopPropagation();
+    const ok = window.confirm('“' + (title || '이 스효립트') + '”를 삭제합니까? 되돌릴 수 없습니다.');
+    if (!ok) return;
+    this.setState(s => {
+      const nextSaved = s.savedSessions.filter(x => x.id !== id);
+      const nextHidden = nextSaved.length === s.savedSessions.length ? s.hiddenIds.concat([id]) : s.hiddenIds;
+      this.persist(nextSaved);
+      return {
+        savedSessions: nextSaved,
+        hiddenIds: nextHidden,
+        selectedSessionId: s.selectedSessionId === id ? null : s.selectedSessionId,
+        screen: s.selectedSessionId === id ? 'list' : s.screen,
+      };
+    }, () => this.persistPrefs());
+  };
+
+  isRefusal(ko) {
+    const t = (ko || '').trim();
+    if (!t) return true;
+    if (t.length > 80) return false;
+    return /입력된? ?(내용|문장)|번역할 (내용|문장)|다른 문장|제공해 ?주세요|입력이 필요|내용이 없습니다|no (input|text|content)/i.test(t);
   }
 
   lookupSelection = () => {
@@ -1053,9 +1176,10 @@ class Component extends DCLogic {
       onPick: () => this.setState({ courseFilter: name }),
     }));
     const sessions = allSessions
+      .filter(x => st.hiddenIds.indexOf(x.id) === -1)
       .filter(x => !q || (x.title + x.course).toLowerCase().includes(q))
       .filter(x => st.courseFilter === '전체' || x.course === st.courseFilter)
-      .map(x => ({ ...x, tagLabel: (x.summary && x.summary.length) ? '요약 완료' : (x.mock ? '요약 완료' : '요약 생성 중'), onOpen: () => this.openDetail(x.id) }));
+      .map(x => ({ ...x, tagLabel: (x.summary && x.summary.length) ? '요약 완료' : (x.mock ? '요약 완료' : '요약 생성 중'), onOpen: () => this.openDetail(x.id), onDelete: (e) => this.deleteSession(x.id, x.title, e) }));
     const selected = this.findSession(st.selectedSessionId) || { title: '', course: '', date: '', duration: '' };
     const rawParas = detail ? (selected.paragraphs || []) : st.liveParagraphs;
     const displayParas = this.buildDisplayParagraphs(rawParas);
