@@ -30,8 +30,7 @@ if ('serviceWorker' in navigator) {
 <style id="__om-edit-overrides">
 @import url('https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&display=swap');
 * { box-sizing: border-box; }
-html { background: #e6e4e1; height: 100%; }
-body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: #e6e4e1; }
 @keyframes recPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.15; } }
 @keyframes shimmer { 0%,100% { opacity: 0.3; } 50% { opacity: 0.8; } }
 @keyframes caret { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
@@ -464,7 +463,7 @@ body { margin: 0; background: #e6e4e1; height: 100%; overflow: hidden; padding: 
 <script type="text/x-dc" data-dc-script>
 const STORE_KEY = 'lectureTranslatorSessions_v1';
 const PREFS_KEY = 'lectureTranslatorPrefs_v1';
-const APP_VERSION = 'v23';
+const APP_VERSION = 'v24';
 const PREF_KEYS = ['fontScale', 'micDevice', 'srcLang', 'dstLang', 'tone', 'engine', 'apiKey', 'gptModel', 'stt', 'sttKey', 'sttModel', 'liveCourse', 'hiddenIds'];
 
 class Component extends DCLogic {
@@ -571,6 +570,7 @@ class Component extends DCLogic {
   teardownRecorder() {
     if (this._recorder && this._recorder.state !== 'inactive') { try { this._recorder.stop(); } catch (e) {} }
     if (this._micStream) this._micStream.getTracks().forEach(t => t.stop());
+    this.teardownAudioGraph();
     this._recorder = null; this._micStream = null;
   }
   _recordingsBySession = {};
@@ -586,9 +586,18 @@ class Component extends DCLogic {
       return;
     }
     if (!window.MediaRecorder || !navigator.mediaDevices) return;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (Ctx && !this._audioCtx) { try { this._audioCtx = new Ctx(); } catch (e) {} }
+    if (this._audioCtx && this._audioCtx.state === 'suspended') { try { this._audioCtx.resume(); } catch (e) {} }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      this._micStream = stream;
+      const dev = this.state.micDevice && this.state.micDevice !== 'default' && this.state.micDevice !== 'built-in' ? { exact: this.state.micDevice } : undefined;
+      const want = { echoCancellation: false, noiseSuppression: false, autoGainControl: true, channelCount: 1 };
+      if (dev) want.deviceId = dev;
+      let raw;
+      try { raw = await navigator.mediaDevices.getUserMedia({ audio: want }); }
+      catch (e) { raw = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+      this._micStream = raw;
+      const stream = this.buildAudioGraph(raw) || raw;
       this._chunks = [];
       this._sttSentIndex = 1;
       this._sttLastMark = 0;
@@ -604,6 +613,40 @@ class Component extends DCLogic {
       this._recorder = rec;
       this._recordingsBySession.live = { chunks: this._chunks, startMs: this._recordingStartMs };
     } catch (e) { /* recording unavailable — replay will fall back to text-to-speech */ }
+  }
+  // far-voice boost: high-pass rumble cut → gain → compressor; analyser on raw input tracks real voice activity
+  buildAudioGraph(raw) {
+    const ctx = this._audioCtx;
+    if (!ctx || !ctx.createMediaStreamDestination) return null;
+    try {
+      this.teardownAudioGraph();
+      const src = ctx.createMediaStreamSource(raw);
+      const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 85;
+      const gain = ctx.createGain(); gain.gain.value = 2.2;
+      const comp = ctx.createDynamicsCompressor();
+      comp.threshold.value = -28; comp.knee.value = 18; comp.ratio.value = 5; comp.attack.value = 0.004; comp.release.value = 0.25;
+      const dest = ctx.createMediaStreamDestination();
+      const an = ctx.createAnalyser(); an.fftSize = 1024;
+      src.connect(hp); hp.connect(gain); gain.connect(comp); comp.connect(dest); src.connect(an);
+      this._graph = { src, hp, gain, comp, dest, an };
+      const buf = new Float32Array(an.fftSize);
+      this._noiseFloor = 0.003; this._lastVoiceAt = Date.now();
+      clearInterval(this._levelTimer);
+      this._levelTimer = setInterval(() => {
+        if (ctx.state === 'suspended') { try { ctx.resume(); } catch (e) {} }
+        an.getFloatTimeDomainData(buf);
+        let sum = 0; for (let i = 0; i < buf.length; i++) sum += buf[i] * buf[i];
+        const rms = Math.sqrt(sum / buf.length);
+        this._noiseFloor = rms < this._noiseFloor ? rms * 0.3 + this._noiseFloor * 0.7 : this._noiseFloor * 0.995 + rms * 0.005;
+        if (rms > Math.max(0.004, this._noiseFloor * 2.5)) this._lastVoiceAt = Date.now();
+      }, 200);
+      return dest.stream;
+    } catch (e) { return null; }
+  }
+  teardownAudioGraph() {
+    clearInterval(this._levelTimer); this._levelTimer = null;
+    const g = this._graph; this._graph = null;
+    if (g) Object.values(g).forEach(n => { try { n.disconnect(); } catch (e) {} });
   }
   pauseRecorder() {
     if (this._recorder && this._recorder.state === 'recording') {
@@ -629,6 +672,7 @@ class Component extends DCLogic {
       try { rec.stop(); } catch (e) { persist(); }
     } else persist();
     if (this._micStream) this._micStream.getTracks().forEach(t => t.stop());
+    this.teardownAudioGraph();
     delete this._recordingsBySession.live;
     this._recorder = null; this._micStream = null; this._chunks = null; this._recordingStartMs = null;
   }
@@ -1028,7 +1072,11 @@ class Component extends DCLogic {
     fd.append('response_format', verbose ? 'verbose_json' : 'json');
     if (verbose) fd.append('timestamp_granularities[]', 'segment');
     if (this.state.srcLang) fd.append('language', this.state.srcLang);
-    if (this._sttPrompt) fd.append('prompt', this._sttPrompt);
+    const topic = [this.state.liveCourse, this.state.liveTitle].filter(Boolean).join(', ');
+    const recent = this._sttPrompt || this.liveSentences().slice(-2).map(x => x.en).join(' ');
+    const sttPrompt = ((topic ? 'A university lecture on ' + topic + '. ' : '') + (recent || '').slice(-180)).trim();
+    if (sttPrompt) fd.append('prompt', sttPrompt);
+    fd.append('temperature', '0');
     const attempt = async () => {
       const ac = new AbortController();
       const to = setTimeout(() => ac.abort(), this._sttTimeoutMs || 12000);
@@ -1316,8 +1364,10 @@ class Component extends DCLogic {
         this.setState(s => ({ elapsed: s.elapsed + 1 }));
         const idle = Date.now() - (this._lastSentenceAt || Date.now());
         if (idle > 40000 && !this._idleWarned) {
-          this._idleWarned = true;
-          this.setState({ notice: '40초 이상 인식된 문장이 없습니다. 마이크 입력과 인터넷 상태를 확인해 주세요.' });
+          const voiceIdle = this._graph && this._lastVoiceAt ? Date.now() - this._lastVoiceAt : null;
+          if (voiceIdle == null) { this._idleWarned = true; this.setState({ notice: '40초 이상 인식된 문장이 없습니다. 마이크 입력과 인터넷 상태를 확인해 주세요.' }); }
+          else if (voiceIdle < 12000) { this._idleWarned = true; this.setState({ notice: '말소리는 들어오는데 40초 넘게 문장이 인식되지 않았습니다. 인터넷 연결이나 OpenAI 사용량을 확인해 주세요.' }); }
+          else if (voiceIdle > 60000) { this._idleWarned = true; this.setState({ notice: '1분 가까이 말소리가 거의 들리지 않습니다. 기기를 강연자 쪽으로 옮기거나 마이크를 확인해 주세요.' }); }
         } else if (idle < 20000) this._idleWarned = false;
       }, 1000);
       this._stickBottom = true;
@@ -1378,12 +1428,67 @@ class Component extends DCLogic {
     this.translateSentence(id, en);
   };
 
-  async callEngine(en) {
-    const SYS = '너는 대학 강의 실시간 자막 번역기다. 입력된 영어 문장을 자연스러운 한국어 한 문장으로 번역한다. 설명, 따옴표, 원문은 절대 출력하지 말고 번역문만 출력한다.';
+  translatePrompt() {
+    const literal = this.state.tone !== 'natural';
+    return [
+      '너는 영어 강의를 실시간으로 듣고 한국어 자막을 만드는 전문 통역사다.',
+      '입력으로 강의 주제, 직전 문맥, 직전 문장, 현재 문장(음성인식 결과)을 받는다. 음성인식은 발음이 비슷한 단어를 자주 잘못 듣는다.',
+      '',
+      '[1단계: 영어 원문 교정]',
+      '- 문맥과 강의 주제에 비추어 명백히 잘못 들은 단어만 고친다(동음이의어, 전문용어·고유명사 오인식, 끊긴 단어).',
+      '- 말하지 않은 내용을 추가하거나 문장을 새로 쓰지 않는다. 확신이 없으면 그대로 둔다.',
+      '- um, uh, you know 같은 군더더기와 같은 단어 반복은 지운다. 대소문자와 문장부호를 바로잡는다.',
+      '- 현재 문장을 보고 직전 문장이 명백히 잘못 들린 것이 확실할 때만 prevEn에 고친 직전 문장을, prevKo에 그 번역을 넣는다. 아니면 둘 다 빈 문자열.',
+      '',
+      '[2단계: 한국어 번역]',
+      '- 중학생부터 어르신까지 한 번 듣고 바로 이해하는 쉬운 우리말로 옮긴다.',
+      '- 영어 어순을 따르지 말고, 한국 사람이 실제로 말하는 순서로 다시 배열한다. 긴 문장은 쉼표로 호흡을 끊어도 된다.',
+      '- 번역투 금지: "~하는 것이다", "~에 의해", "~를 가지다", "~하는 중이다", "그것은", 불필요한 "그/그녀/그들/우리의", 수동태 남발, "~에 대해서"의 반복.',
+      '- 문맥상 분명한 주어·대명사는 생략하거나 가리키는 대상을 직접 말한다.',
+      '- 전문용어는 뜻이 통하는 쉬운 말로 옮기고, 원어가 필요한 경우만 괄호로 짧게 붙인다. 예: 기회비용(opportunity cost).',
+      '- 관용구와 비유는 글자 그대로가 아니라 뜻으로 옮긴다. 예: "a piece of cake" → "아주 쉬운 일".',
+      '- 정확성: 숫자, 단위, 날짜, 부정(not), 조건(if), 비교, 인명·지명은 절대 바꾸거나 빠뜨리지 않는다. 내용을 덧붙이거나 요약하지 않는다.',
+      '- 말투: 강의하는 사람이 학생에게 설명하듯 "~입니다/~해요" 존댓말을 섞어 자연스럽게 쓴다.',
+      literal ? '- 원문의 문장 구조와 표현을 가능한 한 살리되, 한국어로 어색하지 않게 다듬는다.' : '- 원문 구조보다 뜻이 바로 전달되는 것을 우선한다.',
+      '- 문장이 말하다 끊겨 있으면 끊긴 그대로 자연스럽게 옮긴다.',
+      '',
+      '[출력] 다른 말 없이 JSON 한 개만 출력한다: {"en":"교정한 현재 영어 문장","ko":"한국어 번역","prevEn":"","prevKo":""}',
+    ].join('\n');
+  }
+
+  translateInput(en, ctx) {
+    const c = ctx || {};
+    const lines = [];
+    if (c.topic) lines.push('강의 주제: ' + c.topic);
+    if (c.before && c.before.length) lines.push('직전 문맥:\n' + c.before.map(t => '- ' + t).join('\n'));
+    lines.push('직전 문장: ' + (c.prev || '(없음)'));
+    lines.push('현재 문장(음성인식 원문): ' + en);
+    return lines.join('\n');
+  }
+
+  parseTranslation(raw, en) {
+    const txt = (raw || '').trim();
+    const m = txt.match(/\{[\s\S]*\}/);
+    if (m) {
+      try {
+        const o = JSON.parse(m[0]);
+        if (o && typeof o.ko === 'string') return { en: (o.en || '').trim() || en, ko: o.ko.trim(), prevEn: (o.prevEn || '').trim(), prevKo: (o.prevKo || '').trim() };
+      } catch (e) {}
+    }
+    return { en, ko: txt.replace(/^["'“]+|["'”]+$/g, '').trim(), prevEn: '', prevKo: '' };
+  }
+
+  apiError(label, status) {
+    const e = new Error(label + ' 오류(' + status + ')' + (status === 401 ? '. 키를 확인해 주세요.' : status === 429 ? '. 사용량 한도 또는 요청 과다입니다.' : ''));
+    e.status = status;
+    return e;
+  }
+
+  async callLLM(SYS, user, maxTokens, json) {
     const engine = this.state.engine, key = this.state.apiKey.trim();
     if (engine === 'built-in') {
       if (!window.claude || !window.claude.complete) throw new Error('이 기능은 플랫폼 미리보기 안에서만 동작합니다. 설정에서 다른 번역 엔진과 API 키를 넣어주세요.');
-      const out = await window.claude.complete({ system: SYS, messages: [{ role: 'user', content: en }], max_tokens: 300 });
+      const out = await window.claude.complete({ system: SYS, messages: [{ role: 'user', content: user }], max_tokens: maxTokens });
       return (out || '').trim();
     }
     if (!key) throw new Error('설정에서 이 엔진의 API 키를 먼저 입력하고 "연결 확인"을 눌러주세요.');
@@ -1391,38 +1496,51 @@ class Component extends DCLogic {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        body: JSON.stringify({ model: 'claude-3-5-haiku-20241022', max_tokens: 300, system: SYS, messages: [{ role: 'user', content: en }] }),
+        body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: maxTokens, temperature: 0.2, system: SYS, messages: [{ role: 'user', content: user }] }),
       });
-      if (!res.ok) throw new Error('Claude API 오류(' + res.status + '). 키를 확인해 주세요.');
+      if (!res.ok) throw this.apiError('Claude API', res.status);
       const data = await res.json();
       return ((data.content && data.content[0] && data.content[0].text) || '').trim();
     }
     if (engine === 'gpt') {
+      const body = { model: this.state.gptModel || 'gpt-4o-mini', max_tokens: maxTokens, temperature: 0.2, messages: [{ role: 'system', content: SYS }, { role: 'user', content: user }] };
+      if (json) body.response_format = { type: 'json_object' };
       const res = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key },
-        body: JSON.stringify({ model: this.state.gptModel || 'gpt-4o-mini', max_tokens: 300, messages: [{ role: 'system', content: SYS }, { role: 'user', content: en }] }),
+        method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + key }, body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error('GPT API 오류(' + res.status + '). 키를 확인해 주세요.');
+      if (!res.ok) throw this.apiError('GPT API', res.status);
       const data = await res.json();
       return ((data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content) || '').trim();
     }
-    if (engine === 'deepl') {
-      throw new Error('DeepL API는 브라우저에서 직접 호출할 수 없습니다(CORS 차단). 서버를 거쳐야 해서 이 프로토타입에서는 지원하지 않습니다. Claude 또는 GPT 엔진을 사용해 주세요.');
-    }
-    if (engine === 'papago') {
-      throw new Error('파파고 API는 브라우저에서 직접 호출할 수 없습니다(네이버 서버 서명 필요). 서버가 있어야 동작해서 이 프로토타입에서는 지원하지 않습니다. Claude 또는 GPT 엔진을 사용해 주세요.');
-    }
+    throw new Error('알 수 없는 엔진입니다.');
+  }
+
+  async callEngine(en, ctx) {
+    const engine = this.state.engine, key = this.state.apiKey.trim();
+    if (engine === 'deepl') throw new Error('DeepL API는 브라우저에서 직접 호출할 수 없습니다(CORS 차단). Claude 또는 GPT 엔진을 사용해 주세요.');
+    if (engine === 'papago') throw new Error('파파고 API는 브라우저에서 직접 호출할 수 없습니다(네이버 서버 서명 필요). Claude 또는 GPT 엔진을 사용해 주세요.');
     if (engine === 'google') {
+      if (!key) throw new Error('설정에서 Google 번역 API 키를 먼저 입력해 주세요.');
       const res = await fetch('https://translation.googleapis.com/language/translate/v2?key=' + encodeURIComponent(key), {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ q: en, source: 'en', target: 'ko', format: 'text' }),
       });
-      if (!res.ok) throw new Error('Google 번역 API 오류(' + res.status + '). 키를 확인해 주세요.');
+      if (!res.ok) throw this.apiError('Google 번역 API', res.status);
       const data = await res.json();
-      return ((data.data && data.data.translations && data.data.translations[0] && data.data.translations[0].translatedText) || '').trim();
+      return { en, ko: ((data.data && data.data.translations && data.data.translations[0] && data.data.translations[0].translatedText) || '').trim(), prevEn: '', prevKo: '' };
     }
-    throw new Error('알 수 없는 엔진입니다.');
+    const raw = await this.callLLM(this.translatePrompt(), this.translateInput(en, ctx), 600, true);
+    return this.parseTranslation(raw, en);
+  }
+
+  liveSentences() {
+    const st = this.state;
+    return st.liveParagraphs.reduce((a, p) => a.concat(p.sentences), []).concat(st.liveBuffer);
+  }
+
+  similarLength(a, b) {
+    const r = (a || '').length / Math.max(1, (b || '').length);
+    return r > 0.55 && r < 1.7;
   }
 
   async defineWord(word) {
@@ -1437,7 +1555,7 @@ class Component extends DCLogic {
     if (engine === 'claude') {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        body: JSON.stringify({ model: 'claude-3-5-haiku-20241022', max_tokens: 150, system: SYS, messages: [{ role: 'user', content: word }] }),
+        body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 150, system: SYS, messages: [{ role: 'user', content: word }] }),
       });
       if (!res.ok) throw new Error('Claude API 오류(' + res.status + ')');
       const data = await res.json();
@@ -1456,21 +1574,47 @@ class Component extends DCLogic {
   }
 
   async translateSentence(id, en) {
-    let ko = '';
-    try {
-      ko = (await this.callEngine(en)) || '';
-      if (this.isRefusal(ko)) {
-        const retry = await this.callEngine(en).catch(() => '');
-        ko = this.isRefusal(retry) || !retry ? en : retry;
+    const all = this.liveSentences();
+    const idx = all.findIndex(x => x.id === id);
+    const before = idx > 0 ? all.slice(Math.max(0, idx - 5), idx) : [];
+    const prev = before.length ? before[before.length - 1] : null;
+    const ctx = {
+      topic: [this.state.liveCourse, this.state.liveTitle].filter(Boolean).join(' · '),
+      before: before.slice(0, -1).map(x => x.en),
+      prev: prev ? prev.en : '',
+    };
+    let out = null;
+    for (let tries = 0; tries < 4 && !out; tries++) {
+      try {
+        const r = await this.callEngine(en, ctx);
+        if (this.isRefusal(r.ko)) {
+          if (tries < 1) continue;
+          r.ko = en;
+        }
+        out = r;
+      } catch (e) {
+        const st = e && e.status;
+        const retryable = !st || st === 429 || st >= 500;
+        if (!retryable || tries === 3) {
+          out = { en, ko: '번역 실패 · ' + (e && e.message ? e.message : '알 수 없는 오류'), prevEn: '', prevKo: '' };
+          this.setState({ notice: e && e.message ? e.message : '번역에 실패했습니다.' });
+          break;
+        }
+        await new Promise(r => setTimeout(r, 1000 * Math.pow(2, tries)));
       }
-      if (!ko) ko = en;
-    } catch (e) {
-      ko = '번역 실패 · ' + (e && e.message ? e.message : '알 수 없는 오류');
-      this.setState({ notice: e && e.message ? e.message : '번역에 실패했습니다.' });
     }
+    if (!out) out = { en, ko: en, prevEn: '', prevKo: '' };
+    if (!out.ko) out.ko = en;
+    const fixedEn = out.en && out.en !== en && this.similarLength(out.en, en) ? out.en : en;
+    const fixPrev = prev && !prev.pending && out.prevEn && out.prevEn !== prev.en && this.similarLength(out.prevEn, prev.en) && out.prevKo;
+    const patch = (x) => {
+      if (x.id === id) return { ...x, en: fixedEn, rawEn: x.rawEn || x.en, ko: out.ko, pending: false };
+      if (fixPrev && x.id === prev.id) return { ...x, en: out.prevEn, rawEn: x.rawEn || x.en, ko: out.prevKo, revised: true };
+      return x;
+    };
     this.setState(s => ({
-      liveBuffer: s.liveBuffer.map(x => (x.id === id ? { ...x, ko, pending: false } : x)),
-      liveParagraphs: s.liveParagraphs.map(p => ({ ...p, sentences: p.sentences.map(x => (x.id === id ? { ...x, ko, pending: false } : x)) })),
+      liveBuffer: s.liveBuffer.map(patch),
+      liveParagraphs: s.liveParagraphs.map(p => ({ ...p, sentences: p.sentences.map(patch) })),
     }));
   }
 
@@ -1680,7 +1824,7 @@ class Component extends DCLogic {
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
-        body: JSON.stringify({ model: 'claude-3-5-haiku-20241022', max_tokens: 600, system: SYS, messages: [{ role: 'user', content: body }] }),
+        body: JSON.stringify({ model: 'claude-haiku-4-5', max_tokens: 600, system: SYS, messages: [{ role: 'user', content: body }] }),
       });
       if (!res.ok) throw new Error('Claude API 오류(' + res.status + ')');
       const data = await res.json();
